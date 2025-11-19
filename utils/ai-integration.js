@@ -5,7 +5,7 @@ const supabase = require('./supabase').supabase
 
 class AIIntegration {
   // 智能行程规划
-  async planIntelligentItinerary(userId, userInput, formData = {}) {
+  async planIntelligentItinerary(userId, userInput, formData = {}, saveToDatabase = true) {
     try {
       // 获取用户偏好
       const preferencesResult = await db.userPreferences.getByUserId(userId);
@@ -14,10 +14,11 @@ class AIIntegration {
       // 生成行程计划
       const aiResponse = await aiService.generateTravelPlan(userInput, preferences || {})
       
-      // 解析AI响应并保存行程（传入用户表单数据）
+      // 解析AI响应（传入用户表单数据）
       const planData = this.parseAIResponseToPlan(aiResponse, userId, formData)
       
-      if (planData) {
+      if (saveToDatabase && planData) {
+        // 保存到数据库
         const result = await db.travelPlans.create({
           user_id: userId,
           title: planData.title,
@@ -39,7 +40,10 @@ class AIIntegration {
           special_requirements: planData.specialRequirements
         })
         
-        return { success: true, data: result.data, aiResponse }
+        return { success: true, data: result.data, aiResponse, planData }
+      } else if (planData) {
+        // 仅返回规划数据，不保存
+        return { success: true, planData, aiResponse }
       }
       
       return { success: false, aiResponse }
@@ -350,8 +354,70 @@ class AIIntegration {
   }
 
   extractBudget(text) {
-    const match = text.match(/预算[:：](\d+)(?:元|千|万)?/)
-    return match ? parseInt(match[1]) : 0
+    // 尝试多种预算匹配模式
+    const patterns = [
+      /总预算[：:]\s*¥?(\d+)/,
+      /预算[：:]\s*¥?(\d+)/,
+      /总计[：:]\s*¥?(\d+)/,
+      /费用[：:]\s*¥?(\d+)/,
+      /¥(\d+)/
+    ]
+    
+    for (const pattern of patterns) {
+      const match = text.match(pattern)
+      if (match) {
+        const budget = parseInt(match[1])
+        // 验证预算合理性（100-100000之间）
+        if (budget >= 100 && budget <= 100000) {
+          return budget
+        }
+      }
+    }
+    
+    return 3000 // 默认预算
+  }
+
+  // 提取详细费用分解
+  extractDetailedBudget(aiResponse) {
+    const budgetBreakdown = {
+      transportation: 0,
+      accommodation: 0,
+      dining: 0,
+      tickets: 0,
+      shopping: 0,
+      total: 0
+    }
+
+    try {
+      // 解析费用明细部分
+      const 费用部分 = aiResponse.match(/💰\s*费用明细：([\s\S]*?)(?=🚗|🏨|⚠️|$)/)
+      if (费用部分) {
+        const 费用Text = 费用部分[1]
+        
+        // 提取各项费用
+        const transportMatch = 费用Text.match(/交通[：:]\s*¥?(\d+)/)
+        if (transportMatch) budgetBreakdown.transportation = parseInt(transportMatch[1])
+        
+        const accommodationMatch = 费用Text.match(/住宿[：:]\s*¥?(\d+)/)
+        if (accommodationMatch) budgetBreakdown.accommodation = parseInt(accommodationMatch[1])
+        
+        const diningMatch = 费用Text.match(/餐饮[：:]\s*¥?(\d+)/)
+        if (diningMatch) budgetBreakdown.dining = parseInt(diningMatch[1])
+        
+        const ticketsMatch = 费用Text.match(/门票[：:]\s*¥?(\d+)/)
+        if (ticketsMatch) budgetBreakdown.tickets = parseInt(ticketsMatch[1])
+        
+        const shoppingMatch = 费用Text.match(/其他[：:]\s*¥?(\d+)/)
+        if (shoppingMatch) budgetBreakdown.shopping = parseInt(shoppingMatch[1])
+        
+        const totalMatch = 费用Text.match(/总计[：:]\s*¥?(\d+)/)
+        if (totalMatch) budgetBreakdown.total = parseInt(totalMatch[1])
+      }
+    } catch (error) {
+      console.error('解析费用明细失败:', error)
+    }
+
+    return budgetBreakdown
   }
 
   extractTags(text) {

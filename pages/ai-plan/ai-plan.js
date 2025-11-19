@@ -145,27 +145,58 @@ Page({
       .map(item => item.label)
       .join('、')
 
-    // 风格映射
+    // 风格映射和详细要求
     const styleMap = {
-      luxury: '轻奢型',
-      comfortable: '舒适享受',
-      premium: '奢华体验'
+      luxury: {
+        name: '轻奢型',
+        accommodation: '四星级以上酒店',
+        dining: '当地特色餐厅',
+        transport: '舒适型交通'
+      },
+      comfortable: {
+        name: '舒适享受',
+        accommodation: '经济舒适型酒店',
+        dining: '当地美食体验',
+        transport: '便捷交通'
+      },
+      premium: {
+        name: '奢华体验',
+        accommodation: '五星级豪华酒店',
+        dining: '高档餐厅',
+        transport: '专车服务'
+      }
     }
 
-    let prompt = `我想去${destination}旅行，计划${days}，${travelers}人出行，预算${budget}元。`
+    const currentStyle = styleMap[style] || styleMap.comfortable
     
-    if (selectedInterests) {
-      prompt += `我喜欢${selectedInterests}。`
-    }
-    
-    prompt += `旅行风格偏好${styleMap[style]}。`
+    let prompt = `请为我规划一次${destination}的详细旅行行程。
+
+基础信息：
+- 目的地：${destination}
+- 旅行天数：${days}
+- 出行人数：${travelers}人
+- 总预算：${budget}元
+- 旅行风格：${currentStyle.name}
+- 兴趣爱好：${selectedInterests || '无特殊要求'}
+`
     
     if (specialRequirements.trim()) {
-      prompt += `特殊要求：${specialRequirements}。`
+      prompt += `- 特殊要求：${specialRequirements}
+`
     }
     
-    prompt += `请为我规划详细的旅行行程，包括每天的景点安排、交通方式、住宿建议和餐饮推荐。`
+    prompt += `
+请按照以下要求生成行程：
+1. 时间安排精确到具体时间段（上午8:00-12:00，下午13:00-17:00，晚上18:00-22:00）
+2. 费用估算要符合实际（住宿${currentStyle.accommodation}，餐饮${currentStyle.dining}，交通${currentStyle.transport}）
+3. 包含当地特色美食推荐
+4. 考虑景点之间的交通时间
+5. 提供实用的旅行贴士
+6. 每日行程要合理，不要过于赶时间
+7. 景点推荐要符合${travelers}人的游玩体验
 
+请生成完整的旅行计划，包含详细的费用明细。`
+    
     return prompt
   },
 
