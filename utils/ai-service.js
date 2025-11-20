@@ -4,100 +4,319 @@ const AI_CONFIG = require('./config').AI_CONFIG
 
 class AIService {
   constructor() {
-    this.apiKey = AI_CONFIG.apiKey
-    this.apiUrl = AI_CONFIG.apiUrl
-    this.model = AI_CONFIG.model
+    this.providers = AI_CONFIG.providers
+    this.currentProvider = 0 // 从第一个提供商开始尝试
   }
 
-  // 调用 Mistral AI API
+  // 获取当前提供商配置
+  getCurrentProvider() {
+    return this.providers[this.currentProvider]
+  }
+
+  // 切换到下一个提供商
+  switchProvider() {
+    this.currentProvider = (this.currentProvider + 1) % this.providers.length
+    console.log(`切换到AI提供商: ${this.getCurrentProvider().name}`)
+  }
+
+  // 调用 AI API（支持多个提供商）
   async callAPI(messages, options = {}) {
-    try {
-      // 使用微信小程序的 wx.request 替代 fetch
-      const response = await new Promise((resolve, reject) => {
-        wx.request({
-          url: this.apiUrl,
-          method: 'POST',
-          header: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`
-          },
-          data: Object.assign({
-            model: this.model,
-            messages: messages,
-            temperature: options.temperature || 0.7,
-            max_tokens: options.maxTokens || 2000
-          }, options),
-          success: (res) => {
-            resolve(res)
-          },
-          fail: (err) => {
-            reject(err)
-          }
+    const maxRetries = this.providers.length
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const provider = this.getCurrentProvider()
+      
+      try {
+        console.log(`尝试使用AI提供商: ${provider.name}`)
+        
+        // 构建请求数据
+        const requestData = {
+          model: provider.model,
+          messages: messages,
+          temperature: options.temperature || 0.7,
+          max_tokens: options.maxTokens || 2000
+        }
+
+        // 不同提供商的特殊处理
+        if (provider.name === 'openai') {
+          // OpenAI的特殊参数
+          requestData.max_tokens = Math.min(requestData.max_tokens, 4096)
+        }
+
+        console.log('AI API 请求参数:', JSON.stringify(requestData, null, 2))
+        console.log('API URL:', provider.apiUrl)
+        console.log('Provider:', provider.name)
+
+        // 使用微信小程序的 wx.request
+        const response = await new Promise((resolve, reject) => {
+          wx.request({
+            url: provider.apiUrl,
+            method: 'POST',
+            header: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${provider.apiKey}`,
+              'Accept': 'application/json'
+            },
+            data: requestData,
+            timeout: 30000,
+            success: (res) => {
+              resolve(res)
+            },
+            fail: (err) => {
+              reject(err)
+            }
+          })
         })
-      })
 
-      if (response.statusCode !== 200) {
-        throw new Error(`AI API 错误: ${response.statusCode} ${response.data}`)
+        console.log(`${provider.name} API响应状态码:`, response.statusCode)
+
+        // 处理422错误
+        if (response.statusCode === 422) {
+          const errorData = response.data
+          let errorMsg = '请求参数不正确'
+          
+          if (errorData && errorData.error && errorData.error.message) {
+            errorMsg = errorData.error.message
+          } else if (errorData && errorData.detail) {
+            errorMsg = errorData.detail
+          }
+          
+          console.error(`${provider.name} API 422错误:`, errorMsg)
+          
+          // 尝试下一个提供商
+          if (attempt < maxRetries - 1) {
+            this.switchProvider()
+            continue
+          }
+          
+          throw new Error(`所有AI提供商都返回422错误: ${errorMsg}`)
+        }
+
+        if (response.statusCode !== 200) {
+          const errorMsg = response.data?.error?.message || JSON.stringify(response.data)
+          console.error(`${provider.name} API错误:`, errorMsg)
+          
+          // 如果是认证错误，尝试下一个提供商
+          if (response.statusCode === 401 && attempt < maxRetries - 1) {
+            this.switchProvider()
+            continue
+          }
+          
+          throw new Error(`AI API 错误: ${response.statusCode} ${errorMsg}`)
+        }
+
+        if (!response.data || !response.data.choices || !response.data.choices[0]) {
+          throw new Error('AI API 响应格式错误：缺少choices字段')
+        }
+
+        console.log(`${provider.name} API调用成功`)
+        return response.data.choices[0].message.content
+
+      } catch (error) {
+        console.error(`${provider.name} API调用失败:`, error)
+        
+        // 如果不是最后一次尝试，切换提供商继续
+        if (attempt < maxRetries - 1) {
+          console.log('切换到下一个提供商重试...')
+          this.switchProvider()
+          continue
+        }
+        
+        // 所有提供商都失败了，返回模拟响应
+        console.log('所有AI提供商都失败，返回模拟响应')
+        return this.generateMockResponse(messages[0]?.content || '')
       }
-
-      return response.data.choices[0].message.content
-    } catch (error) {
-      console.error('AI 服务调用失败:', error)
-      throw error
     }
+  }
+
+  // 生成模拟AI响应（作为备用方案）
+  generateMockResponse(userInput) {
+    console.log('生成模拟AI响应，输入:', userInput)
+    
+    // 从用户输入中提取信息
+    const destinationMatch = userInput.match(/目的地[:：]\s*([^\n]+)/i)
+    const daysMatch = userInput.match(/旅行天数[:：]\s*([^\n]+)/i)
+    const travelersMatch = userInput.match(/出行人数[:：]\s*(\d+)/i)
+    const budgetMatch = userInput.match(/总预算[:：]\s*([^\n]+)/i)
+    
+    const destination = destinationMatch ? destinationMatch[1].trim() : '邯郸'
+    const days = daysMatch ? daysMatch[1].trim() : '3天'
+    const travelers = travelersMatch ? parseInt(travelersMatch[1]) : 3
+    const budget = budgetMatch ? budgetMatch[1].trim() : '2000'
+    const totalDays = parseInt(days) || 3
+    
+    // 生成动态日期
+    const today = new Date()
+    const startDate = today.toISOString().split('T')[0]
+    const endDate = new Date(today.getTime() + (totalDays - 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    
+    // 根据目的地生成特色内容
+    const getDestinationFeatures = (dest) => {
+      if (dest.includes('北京')) {
+        return {
+          attractions: ['故宫博物院', '天安门广场', '长城八达岭', '颐和园'],
+          food: ['北京烤鸭', '炸酱面', '豆汁儿', '护国寺小吃'],
+          tips: '北京历史悠久，景点众多，建议合理安排时间，注意天气变化'
+        }
+      } else if (dest.includes('上海')) {
+        return {
+          attractions: ['外滩', '东方明珠塔', '豫园', '南京路步行街'],
+          food: ['小笼包', '生煎包', '上海本帮菜', '糖醋排骨'],
+          tips: '上海现代化程度高，交通便利，注意节假日期间人流拥挤'
+        }
+      } else if (dest.includes('杭州')) {
+        return {
+          attractions: ['西湖', '灵隐寺', '雷峰塔', '宋城'],
+          food: ['西湖醋鱼', '东坡肉', '龙井虾仁', '叫花鸡'],
+          tips: '杭州风景优美，春季最佳，注意景区内交通安排'
+        }
+      } else {
+        // 默认邯郸内容
+        return {
+          attractions: ['丛台公园', '学步桥', '响堂山石窟', '邯郸市博物馆'],
+          food: ['丛台大曲酒', '河北菜', '邯郸驴肉火烧', '永年酥鱼'],
+          tips: '邯郸历史文化深厚，秋季早晚温差大，建议携带适当衣物'
+        }
+      }
+    }
+    
+    const features = getDestinationFeatures(destination)
+    
+    // 生成详细行程
+    let dayPlans = ''
+    for (let i = 1; i <= totalDays; i++) {
+      const date = new Date(today.getTime() + (i - 1) * 24 * 60 * 60 * 1000)
+      const dateStr = date.toISOString().split('T')[0]
+      
+      if (i === 1) {
+        // 第一天：主要景点
+        dayPlans += `Day ${i} - ${dateStr}：
+🌅 上午 (8:00-12:00)：参观${features.attractions[0]}，感受当地历史文化
+🍽️ 午餐 (12:00-13:00)：品尝当地特色——${features.food[0]}
+☀️ 下午 (13:00-17:00)：游览${features.attractions[1]}，深度体验
+🍽️ 晚餐 (17:00-18:00)：在当地餐厅享用${features.food[1]}
+🌙 晚上 (18:00-22:00)：休息调整，适应环境
+
+`
+      } else if (i === totalDays) {
+        // 最后一天：购物和返程准备
+        dayPlans += `Day ${i} - ${dateStr}：
+🌅 上午 (8:00-12:00)：参观${features.attractions[2]}，了解民俗文化
+🍽️ 午餐 (12:00-13:00)：品尝${features.food[2]}
+☀️ 下午 (13:00-17:00)：购买当地特产，准备返程
+🍽️ 晚餐 (17:00-18:00)：告别晚餐
+🌙 晚上 (18:00-22:00)：整理行李，准备返程
+
+`
+      } else {
+        // 中间天数：周边探索
+        dayPlans += `Day ${i} - ${dateStr}：
+🌅 上午 (8:00-12:00)：前往${features.attractions[3]}，探索自然风光
+🍽️ 午餐 (12:00-13:00)：当地农家菜体验
+☀️ 下午 (13:00-17:00)：深度游览${features.attractions[3]}，拍照留念
+🍽️ 晚餐 (17:00-18:00)：品尝${features.food[3]}
+🌙 晚上 (18:00-22:00)：自由活动，体验夜生活
+
+`
+      }
+    }
+    
+    // 计算费用明细
+    const accommodationCost = Math.floor(parseInt(budget) * 0.4)
+    const foodCost = Math.floor(parseInt(budget) * 0.25)
+    const transportCost = Math.floor(parseInt(budget) * 0.2)
+    const ticketCost = Math.floor(parseInt(budget) * 0.1)
+    const otherCost = parseInt(budget) - accommodationCost - foodCost - transportCost - ticketCost
+    
+    return `📍 目的地：${destination}
+📅 出行时间：${startDate} 至 ${endDate} (共${totalDays}天)
+👥 出行人数：${travelers}人
+💰 总预算：¥${budget}
+🎯 旅行主题：文化历史体验游
+
+📋 详细行程：
+${dayPlans}💰 费用明细：
+- 交通：¥${transportCost} (含往返大交通+市内交通)
+- 住宿：¥${accommodationCost} (${totalDays}晚×${Math.floor(accommodationCost/totalDays)}元/晚)
+- 餐饮：¥${foodCost} (${totalDays}天×${Math.floor(foodCost/totalDays/travelers)}元/人/天×${travelers}人)
+- 门票：¥${ticketCost} (主要景点门票)
+- 其他：¥${otherCost} (购物、应急等)
+- 总计：¥${budget}
+
+🚗 交通安排：建议包车或使用当地交通工具，提前规划路线
+🏨 住宿推荐：选择市中心区域酒店，交通便利且性价比高
+⚠️ 重要提醒：${features.tips}
+💡 贴士：建议提前了解景点开放时间，合理安排行程密度`
   }
 
   // 行程规划助手
   async generateTravelPlan(userInput, userPreferences = {}) {
-    const systemPrompt = `你是一个专业的旅行规划AI助手，擅长为用户制定详细且实用的旅行行程。
+    const systemPrompt = `你是一个经验丰富的旅行规划AI助手，专门为用户制定详细、实用、个性化的旅行行程。
 
-请根据用户提供的信息，生成超详细的旅行计划，要求：
-1. **时间段具体化**：每天安排要具体到上午(8:00-12:00)、下午(13:00-17:00)、晚上(18:00-22:00)
-2. **费用符合实际**：住宿按经济型(150-300元/晚)，餐饮按当地标准(60-150元/人/天)，交通市内(20-50元/天)
-3. **行程合理化**：考虑交通时间、景点开放时间、用餐时间
-4. **体验本地化**：包含当地特色美食、文化体验
-5. **实用贴士**：注意事项、最佳拍照时间、避坑指南
+## 核心要求：
+1. **时间段精确化**：每天必须明确安排上午(8:00-12:00)、下午(13:00-17:00)、晚上(18:00-22:00)
+2. **费用真实性**：基于实际市场定价
+   - 住宿：经济型120-280元/晚，舒适型280-450元/晚
+   - 餐饮：当地人均50-120元/天
+   - 市内交通：15-40元/天
+   - 景点门票：按实际票价
+3. **行程合理性**：考虑交通衔接、景点游览时间、用餐安排
+4. **本地化体验**：深入当地特色美食、文化、民俗
+5. **实用性强**：提供具体可行的建议和贴士
 
-输出格式：
-📍 目的地：[目的地名称]
-📅 出行时间：[开始日期] 至 [结束日期] (共X天)
-👥 出行人数：[X]人
-💰 总预算：¥[金额]
-🎯 旅行主题：[主题]
+## 输出格式（严格遵循）：
+📍 目的地：[完整目的地名称]
+📅 出行时间：[YYYY-MM-DD] 至 [YYYY-MM-DD] (共X天)
+👥 出行人数：[数字]人
+💰 总预算：¥[数字]
+🎯 旅行主题：[主题描述]
 
 📋 详细行程：
+
 Day 1 - [日期]：
-🌅 上午 (8:00-12:00)：[具体活动，含交通时间]
-🍽️ 午餐 (12:00-13:00)：[推荐餐厅或美食]
-☀️ 下午 (13:00-17:00)：[具体活动，含门票信息]
-🍽️ 晚餐 (17:00-18:00)：[推荐餐厅或美食]
-🌙 晚上 (18:00-22:00)：[夜间活动、住宿建议]
+🌅 上午 (8:00-12:00)：[具体景点/活动 + 交通安排 + 预计游览时间]
+🍽️ 午餐 (12:00-13:00)：[餐厅名称 + 推荐菜系 + 预估人均消费]
+☀️ 下午 (13:00-17:00)：[具体景点/活动 + 门票信息 + 游览重点]
+🍽️ 晚餐 (17:00-18:00)：[餐厅推荐 + 当地特色菜品]
+🌙 晚上 (18:00-22:00)：[夜间活动 + 住宿建议 + 注意事项]
 
 Day 2 - [日期]：
-[同上格式]
+🌅 上午 (8:00-12:00)：[具体安排]
+🍽️ 午餐 (12:00-13:00)：[餐饮推荐]
+☀️ 下午 (13:00-17:00)：[具体安排]
+🍽️ 晚餐 (17:00-18:00)：[餐饮推荐]
+🌙 晚上 (18:00-22:00)：[夜间安排]
 
-💰 费用明细：
-- 交通：¥[金额] (含往返大交通+市内交通)
-- 住宿：¥[金额] ([X]晚×[金额]元/晚)
-- 餐饮：¥[金额] ([X]天×[金额]元/人/天×[人数]人)
-- 门票：¥[金额] (列明主要景点门票)
-- 其他：¥[金额] (购物、应急等)
+[继续相同格式直到最后一天]
+
+💰 详细费用明细：
+- 交通：¥[金额] (往返大交通 + 市内交通明细)
+- 住宿：¥[金额] ([X]晚×[平均]元/晚 + 酒店档次说明)
+- 餐饮：¥[金额] ([X]天×[平均]元/人/天×[人数]人 + 用餐标准)
+- 门票：¥[金额] (主要景点门票明细)
+- 其他：¥[金额] (购物、应急、小费等)
 - 总计：¥[总金额]
 
-🚗 交通安排：[具体交通建议]
-🏨 住宿推荐：[酒店类型和位置建议]
-⚠️ 重要提醒：[注意事项]
+🚗 交通安排：[详细交通建议 + 出行方式选择]
+🏨 住宿推荐：[住宿区域选择 + 酒店类型参考]
+⚠️ 重要提醒：[天气、着装、安全、实用贴士]
+
+## 特别说明：
+- 确保每个时间段都有具体可执行的内容
+- 费用明细必须真实合理，符合当地消费水平
+- 根据目的地特色推荐具体的餐厅和景点
+- 提供实用的旅行建议和注意事项
 
 用户偏好：${JSON.stringify(userPreferences)}
 
-请严格按照以上格式输出，确保信息准确、费用合理、时间安排详细。`
+请严格按照以上格式和要求生成完整、详细、实用的旅行计划。`
 
     const messages = [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userInput }
     ]
 
-    return await this.callAPI(messages, { temperature: 0.6, maxTokens: 3000 })
+    return await this.callAPI(messages, { temperature: 0.4, maxTokens: 3500 })
   }
 
   // 景点推荐

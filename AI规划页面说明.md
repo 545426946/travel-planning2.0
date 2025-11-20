@@ -159,7 +159,7 @@ async onSubmit() {
 
   this.setData({ isLoading: true })
 
-  const result = await aiIntegration.planIntelligentItinerary(userId, userInput)
+  const result = await aiIntegration.planIntelligentItinerary(userId, userInput, {}, false)
 
   if (result.success) {
     // 规划成功，返回并刷新列表

@@ -15,6 +15,7 @@ Page({
       '国内有哪些必去的景点？'
     ],
     isLoading: false,
+    isSavingPlan: false,
     scrollToView: ''
   },
 
@@ -309,8 +310,8 @@ ${itinerary}
         if (res.confirm) {
           this.saveAIGeneratedPlan(planData)
         } else {
-          // 重新规划
-          this.generateTravelPlan()
+          // 重新规划 - 调用planItinerary方法
+          this.planItinerary()
         }
       }
     })
@@ -351,19 +352,65 @@ ${itinerary}
   // 解析行程概要
   parseItinerarySummary(itinerary) {
     try {
-      const itineraryObj = typeof itinerary === 'string' ? JSON.parse(itinerary) : itinerary
-      let summary = ''
+      // 如果是字符串，先尝试解析为JSON
+      if (typeof itinerary === 'string') {
+        try {
+          const itineraryObj = JSON.parse(itinerary)
+          if (itineraryObj && typeof itineraryObj === 'object') {
+            let summary = ''
+            Object.keys(itineraryObj).forEach((day, index) => {
+              if (itineraryObj[day]) {
+                summary += `Day ${index + 1}: ${itineraryObj[day].substring(0, 100)}...
+`
+              }
+            })
+            return summary || '详细行程安排已生成，保存后可查看完整内容'
+          }
+        } catch (jsonError) {
+          // JSON解析失败，按纯文本处理
+          console.log('行程数据为纯文本格式，直接显示')
+        }
+      }
       
-      if (itineraryObj && typeof itineraryObj === 'object') {
-        Object.keys(itineraryObj).forEach((day, index) => {
-          if (itineraryObj[day]) {
-            summary += `Day ${index + 1}: ${itineraryObj[day].substring(0, 100)}...
+      // 如果是对象，直接处理
+      if (itinerary && typeof itinerary === 'object') {
+        let summary = ''
+        Object.keys(itinerary).forEach((day, index) => {
+          if (itinerary[day]) {
+            summary += `Day ${index + 1}: ${itinerary[day].substring(0, 100)}...
 `
           }
         })
+        return summary || '详细行程安排已生成，保存后可查看完整内容'
       }
       
-      return summary || '详细行程安排已生成，保存后可查看完整内容'
+      // 如果是纯文本，尝试提取每日行程
+      if (typeof itinerary === 'string') {
+        const lines = itinerary.split('\n').filter(line => line.trim())
+        let summary = ''
+        let dayCount = 0
+        
+        for (let line of lines) {
+          // 匹配Day开头或第X天的格式
+          const dayMatch = line.match(/^(Day\s+\d+|第[一二三四五六七八九十]+天)[:：\s]/i)
+          if (dayMatch && dayCount < 3) { // 只显示前3天
+            dayCount++
+            const content = line.substring(dayMatch[0].length).trim()
+            summary += `${dayMatch[1]}: ${content.substring(0, 80)}...
+`
+          }
+        }
+        
+        // 如果没有找到Day格式，尝试按段落提取
+        if (!summary && lines.length > 0) {
+          summary = lines.slice(0, 3).join('\n').substring(0, 200)
+          if (itinerary.length > 200) summary += '...'
+        }
+        
+        return summary || itinerary.substring(0, 200) + (itinerary.length > 200 ? '...' : '')
+      }
+      
+      return '详细行程安排已生成，保存后可查看完整内容'
     } catch (error) {
       console.error('解析行程概要失败:', error)
       return '详细行程安排已生成，保存后可查看完整内容'
@@ -430,20 +477,84 @@ ${itinerary}
 
   // 保存AI生成的计划
   async saveAIGeneratedPlan(planData) {
+    // 防止重复点击
+    if (this.data.isSavingPlan) {
+      console.log('行程保存中，防止重复操作')
+      return
+    }
+    
     try {
+      this.setData({ isSavingPlan: true })
       wx.showLoading({ title: '保存中...' })
       
       const { aiIntegration } = require('../../utils/ai-integration')
-      const result = await aiIntegration.planIntelligentItinerary(
+      
+      // 🔍 本地存储检查：检查是否已经保存过类似行程
+      const savedPlans = wx.getStorageSync('saved_ai_plans') || []
+      const planKey = `${planData.destination}_${planData.startDate}_${planData.endDate}_${planData.travelersCount}`
+      
+      // 检查最近30天内是否保存过相同行程
+      const now = new Date().getTime()
+      const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000)
+      const recentSavedPlans = savedPlans.filter(item => item.timestamp > thirtyDaysAgo)
+      const isRecentlySaved = recentSavedPlans.some(item => item.key === planKey)
+      
+      if (isRecentlySaved) {
+        wx.hideLoading()
+        wx.showModal({
+          title: '提示',
+          content: '您最近已经保存过类似的行程了，确定要再次保存吗？',
+          success: async (res) => {
+            if (res.confirm) {
+              wx.showLoading({ title: '保存中...' })
+              await this.doSavePlan(planData, planKey)
+            } else {
+              this.setData({ isSavingPlan: false })
+            }
+          }
+        })
+        return
+      }
+      
+      // 使用savePlanOnly方法直接保存，避免重新生成
+      await this.doSavePlan(planData, planKey)
+      
+    } catch (error) {
+      wx.hideLoading()
+      console.error('保存计划失败:', error)
+      wx.showToast({
+        title: '保存失败',
+        icon: 'none'
+      })
+      this.setData({ isSavingPlan: false })
+    }
+  },
+  
+  // 执行实际的保存操作
+  async doSavePlan(planData, planKey) {
+    try {
+      const { aiIntegration } = require('../../utils/ai-integration')
+      
+      const result = await aiIntegration.savePlanOnly(
         this.data.userInfo.id,
-        `保存${planData.destination}行程`,
-        planData,
-        true // 保存到数据库
+        planData
       )
 
       wx.hideLoading()
 
       if (result.success) {
+        // ✅ 保存成功：记录到本地存储
+        const savedPlans = wx.getStorageSync('saved_ai_plans') || []
+        savedPlans.push({
+          key: planKey,
+          timestamp: new Date().getTime(),
+          planId: result.data.id,
+          title: planData.title
+        })
+        // 只保留最近100条记录
+        const recentPlans = savedPlans.slice(-100)
+        wx.setStorageSync('saved_ai_plans', recentPlans)
+        
         wx.showToast({
           title: '保存成功',
           icon: 'success'
@@ -464,18 +575,30 @@ ${itinerary}
           })
         }, 1500)
       } else {
-        wx.showToast({
-          title: '保存失败',
-          icon: 'none'
-        })
+        // 处理重复保存的情况
+        if (result.isDuplicate) {
+          wx.showModal({
+            title: '提示',
+            content: result.error || '该行程已存在',
+            showCancel: false,
+            confirmText: '查看行程'
+          })
+        } else {
+          wx.showToast({
+            title: result.error || '保存失败',
+            icon: 'none'
+          })
+        }
       }
     } catch (error) {
       wx.hideLoading()
-      console.error('保存计划失败:', error)
+      console.error('执行保存失败:', error)
       wx.showToast({
         title: '保存失败',
         icon: 'none'
       })
+    } finally {
+      this.setData({ isSavingPlan: false })
     }
   },
 

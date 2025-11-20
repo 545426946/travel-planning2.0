@@ -8,8 +8,8 @@ class AIIntegration {
   async planIntelligentItinerary(userId, userInput, formData = {}, saveToDatabase = true) {
     try {
       // 获取用户偏好
-      const preferencesResult = await db.userPreferences.getByUserId(userId);
-      const preferences = preferencesResult.data;
+      const preferencesResult = await db.userPreferences.getByUserId(userId)
+      const preferences = preferencesResult.data
       
       // 生成行程计划
       const aiResponse = await aiService.generateTravelPlan(userInput, preferences || {})
@@ -53,16 +53,106 @@ class AIIntegration {
     }
   }
 
+  // 仅保存行程（不重新生成）
+  async savePlanOnly(userId, planData) {
+    try {
+      if (!planData) {
+        return { success: false, error: '没有可保存的行程数据' }
+      }
+
+      console.log('开始保存行程数据:', planData.title)
+
+      // 🔍 防重复检查：检查最近是否保存过相同行程
+      try {
+        const existingPlans = await db.travelPlans.getByUserId(userId, 'planned', 10)
+        if (existingPlans.data && existingPlans.data.length > 0) {
+          const duplicatePlan = existingPlans.data.find(plan => {
+            // 检查目的地和日期是否完全相同
+            const sameDestination = plan.destination === planData.destination
+            const sameStartDate = plan.start_date === planData.startDate
+            const sameEndDate = plan.end_date === planData.endDate
+            const sameTravelers = plan.travelers_count === planData.travelersCount
+            
+            return sameDestination && sameStartDate && sameEndDate && sameTravelers
+          })
+          
+          if (duplicatePlan) {
+            console.log('发现重复行程，阻止保存:', duplicatePlan.id)
+            return { 
+              success: false, 
+              error: '您已经保存过相同的行程了，请勿重复保存',
+              data: duplicatePlan,
+              isDuplicate: true
+            }
+          }
+        }
+      } catch (checkError) {
+        console.log('重复检查失败，继续保存:', checkError)
+        // 检查失败时不应该阻止保存，继续正常流程
+      }
+
+      // 保存到数据库
+      const result = await db.travelPlans.create({
+        user_id: userId,
+        title: planData.title,
+        description: planData.description,
+        destination: planData.destination,
+        start_date: planData.startDate,
+        end_date: planData.endDate,
+        total_budget: planData.budget,
+        total_days: planData.totalDays,
+        travelers_count: planData.travelersCount,
+        travel_style: planData.travelStyle,
+        interests: planData.interests,
+        itinerary: planData.itinerary,
+        is_ai_generated: true,
+        status: 'planned',
+        tags: planData.tags,
+        transportation: planData.transportation,
+        accommodation: planData.accommodation,
+        special_requirements: planData.specialRequirements
+      })
+      
+      if (result.error) {
+        throw new Error(result.error.message || '保存失败')
+      }
+
+      console.log('行程保存成功:', result.data)
+      
+      return { 
+        success: true, 
+        data: result.data,
+        message: '行程保存成功'
+      }
+    } catch (error) {
+      console.error('保存行程失败:', error)
+      
+      // 处理数据库唯一约束冲突
+      if (error.message && error.message.includes('unique')) {
+        return { 
+          success: false, 
+          error: '该行程已存在，请勿重复保存',
+          isDuplicate: true
+        }
+      }
+      
+      return { 
+        success: false, 
+        error: error.message || '保存行程时出现错误'
+      }
+    }
+  }
+
   // 智能景点推荐
   async getSmartDestinationRecommendations(userId, currentLocation = null) {
     try {
       // 获取用户偏好
-      const preferencesResult = await db.userPreferences.getByUserId(userId);
-      const preferences = preferencesResult.data;
+      const preferencesResult = await db.userPreferences.getByUserId(userId)
+      const preferences = preferencesResult.data
       
       // 获取用户历史收藏
-      const favoritesResult = await db.favorites.getUserFavorites(userId, 'destination');
-      const favorites = favoritesResult.data;
+      const favoritesResult = await db.favorites.getUserFavorites(userId, 'destination')
+      const favorites = favoritesResult.data
       
       // 生成AI推荐
       const aiResponse = await aiService.recommendDestinations(
@@ -122,8 +212,8 @@ class AIIntegration {
   async optimizeItinerary(planId, optimizationGoal = '优化时间安排') {
     try {
       // 获取行程详情
-      const planResult = await db.travelPlans.getById(planId);
-      const plan = planResult.data;
+      const planResult = await db.travelPlans.getById(planId)
+      const plan = planResult.data
       
       if (!plan) {
         return { success: false, error: '行程不存在' }
@@ -155,9 +245,9 @@ class AIIntegration {
   // 智能问答
   async askTravelQuestion(userId, question, context = {}) {
     try {
-      const preferencesResult = await db.userPreferences.getByUserId(userId);
-      const preferences = preferencesResult.data;
-      const recentPlansResult = await db.travelPlans.getByUserId(userId, 'planned', 3);
+      const preferencesResult = await db.userPreferences.getByUserId(userId)
+      const preferences = preferencesResult.data
+      const recentPlansResult = await db.travelPlans.getByUserId(userId, 'planned', 3)
       const recentPlans = recentPlansResult.data
       
       const enrichedContext = Object.assign({
@@ -375,49 +465,6 @@ class AIIntegration {
     }
     
     return 3000 // 默认预算
-  }
-
-  // 提取详细费用分解
-  extractDetailedBudget(aiResponse) {
-    const budgetBreakdown = {
-      transportation: 0,
-      accommodation: 0,
-      dining: 0,
-      tickets: 0,
-      shopping: 0,
-      total: 0
-    }
-
-    try {
-      // 解析费用明细部分
-      const 费用部分 = aiResponse.match(/💰\s*费用明细：([\s\S]*?)(?=🚗|🏨|⚠️|$)/)
-      if (费用部分) {
-        const 费用Text = 费用部分[1]
-        
-        // 提取各项费用
-        const transportMatch = 费用Text.match(/交通[：:]\s*¥?(\d+)/)
-        if (transportMatch) budgetBreakdown.transportation = parseInt(transportMatch[1])
-        
-        const accommodationMatch = 费用Text.match(/住宿[：:]\s*¥?(\d+)/)
-        if (accommodationMatch) budgetBreakdown.accommodation = parseInt(accommodationMatch[1])
-        
-        const diningMatch = 费用Text.match(/餐饮[：:]\s*¥?(\d+)/)
-        if (diningMatch) budgetBreakdown.dining = parseInt(diningMatch[1])
-        
-        const ticketsMatch = 费用Text.match(/门票[：:]\s*¥?(\d+)/)
-        if (ticketsMatch) budgetBreakdown.tickets = parseInt(ticketsMatch[1])
-        
-        const shoppingMatch = 费用Text.match(/其他[：:]\s*¥?(\d+)/)
-        if (shoppingMatch) budgetBreakdown.shopping = parseInt(shoppingMatch[1])
-        
-        const totalMatch = 费用Text.match(/总计[：:]\s*¥?(\d+)/)
-        if (totalMatch) budgetBreakdown.total = parseInt(totalMatch[1])
-      }
-    } catch (error) {
-      console.error('解析费用明细失败:', error)
-    }
-
-    return budgetBreakdown
   }
 
   extractTags(text) {

@@ -18,6 +18,22 @@ const getAppConfig = () => {
 
 // AI 服务配置
 const AI_CONFIG = {
+  // 尝试多个AI服务，按优先级排序
+  providers: [
+    {
+      name: 'mistral',
+      apiKey: getAppConfig().AI_API_KEY || 'E8L3fryNUIsAoWvROdNrumpwFTtfuCBL',
+      apiUrl: getAppConfig().AI_API_URL || 'https://api.mistral.ai/v1/chat/completions',
+      model: getAppConfig().AI_MODEL || 'mistral-small-latest'
+    },
+    {
+      name: 'openai',
+      apiKey: 'sk-placeholder-key', // 需要配置真实的OpenAI密钥
+      apiUrl: 'https://api.openai.com/v1/chat/completions',
+      model: 'gpt-3.5-turbo'
+    }
+  ],
+  // 当前使用的配置（向后兼容）
   apiKey: getAppConfig().AI_API_KEY || 'E8L3fryNUIsAoWvROdNrumpwFTtfuCBL',
   apiUrl: getAppConfig().AI_API_URL || 'https://api.mistral.ai/v1/chat/completions',
   model: getAppConfig().AI_MODEL || 'mistral-small-latest'

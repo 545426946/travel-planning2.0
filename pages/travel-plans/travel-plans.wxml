@@ -19,29 +19,7 @@
     </button>
   </view>
 
-  <!-- 筛选栏 -->
-  <view class="filter-bar">
-    <view class="filter-item {{filterStatus === 'all' ? 'active' : ''}}" 
-          bindtap="changeFilter" 
-          data-status="all">
-      <text>全部</text>
-    </view>
-    <view class="filter-item {{filterStatus === 'planned' ? 'active' : ''}}" 
-          bindtap="changeFilter" 
-          data-status="planned">
-      <text>计划中</text>
-    </view>
-    <view class="filter-item {{filterStatus === 'ongoing' ? 'active' : ''}}" 
-          bindtap="changeFilter" 
-          data-status="ongoing">
-      <text>进行中</text>
-    </view>
-    <view class="filter-item {{filterStatus === 'completed' ? 'active' : ''}}" 
-          bindtap="changeFilter" 
-          data-status="completed">
-      <text>已完成</text>
-    </view>
-  </view>
+
 
   <!-- 我的行程列表 -->
   <view class="plans-section">
@@ -78,38 +56,38 @@
         <!-- 行程信息 -->
         <view class="plan-info">
           <view class="plan-header">
-            <text class="plan-title">{{item.title}}</text>
+            <text class="plan-title" user-select="{{true}}">{{item.title}}</text>
             <view class="plan-status" style="background-color: {{getStatusColor(item.status)}}">
-              <text>{{getStatusText(item.status)}}</text>
+              <text user-select="{{true}}">{{getStatusText(item.status)}}</text>
             </view>
           </view>
 
-          <text class="plan-description">{{item.description}}</text>
+          <text class="plan-description" user-select="{{true}}">{{item.description}}</text>
 
           <!-- 行程元数据 -->
           <view class="plan-meta">
             <view class="meta-item">
               <text class="meta-icon">📅</text>
-              <text class="meta-text">{{item.totalDays}}天</text>
+              <text class="meta-text" user-select="{{true}}">{{item.totalDays}}天</text>
             </view>
             <view class="meta-item">
               <text class="meta-icon">👥</text>
-              <text class="meta-text">{{item.travelers}}人</text>
+              <text class="meta-text" user-select="{{true}}">{{item.travelers}}人</text>
             </view>
             <view class="meta-item">
               <text class="meta-icon">💰</text>
-              <text class="meta-text">¥{{item.budget}}</text>
+              <text class="meta-text" user-select="{{true}}">¥{{item.budget}}</text>
             </view>
             <view class="meta-item">
               <text class="meta-icon">📍</text>
-              <text class="meta-text">{{item.destination}}</text>
+              <text class="meta-text" user-select="{{true}}">{{item.destination}}</text>
             </view>
           </view>
 
           <!-- 标签 -->
           <view wx:if="{{item.tags && item.tags.length > 0}}" class="plan-tags">
             <view wx:for="{{item.tags}}" wx:key="index" wx:for-item="tag" class="tag">
-              <text>{{tag}}</text>
+              <text user-select="{{true}}">{{tag}}</text>
             </view>
           </view>
 

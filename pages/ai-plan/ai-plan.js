@@ -36,7 +36,10 @@ Page({
     ],
     
     // 加载状态
-    isLoading: false
+    isLoading: false,
+    
+    // 保存状态 - 防止重复保存
+    isSaving: false
   },
 
   onLoad(options) {
@@ -217,6 +220,10 @@ Page({
       return
     }
 
+    // 清除之前的数据，防止重复
+    this.currentPlanData = null
+    this.setData({ isSaving: false })
+
     const userId = Auth.getCurrentUserId()
 
     this.setData({ isLoading: true })
@@ -244,36 +251,14 @@ Page({
 
       console.log('表单数据:', formDataForAI)
 
-      // 调用AI规划服务（传入表单数据）
-      const result = await aiIntegration.planIntelligentItinerary(userId, userInput, formDataForAI)
+      // 调用AI规划服务（传入表单数据，不自动保存）
+      const result = await aiIntegration.planIntelligentItinerary(userId, userInput, formDataForAI, false)
 
       this.setData({ isLoading: false })
 
-      if (result.success) {
-        wx.showToast({
-          title: 'AI规划成功',
-          icon: 'success',
-          duration: 2000
-        })
-
-        // 延迟返回并刷新列表
-        setTimeout(() => {
-          wx.navigateBack({
-            success: () => {
-              // 通知上一个页面刷新数据
-              const pages = getCurrentPages()
-              const prevPage = pages[pages.length - 2]
-              if (prevPage && prevPage.loadUserTravelPlans) {
-                prevPage.loadUserTravelPlans()
-              }
-            }
-          })
-        }, 2000)
-
-        // 显示AI规划结果
-        if (result.aiResponse) {
-          this.showPlanResult(result.aiResponse, result.data)
-        }
+      if (result.success && result.aiResponse) {
+        // 显示AI规划结果，让用户选择是否保存
+        this.showPlanResultWithOptions(result.aiResponse, result.planData, formDataForAI)
       } else {
         wx.showModal({
           title: 'AI规划提示',
@@ -294,7 +279,57 @@ Page({
     }
   },
 
-  // 显示规划结果
+  // 显示规划结果并提供建议选项
+  showPlanResultWithOptions(aiResponse, planData, formData) {
+    const content = aiResponse.length > 800 
+      ? aiResponse.substring(0, 800) + '...\n\n（完整内容请在保存后查看）' 
+      : aiResponse
+
+    // 保存当前数据到实例变量
+    this.currentPlanData = {
+      planData: planData,
+      aiResponse: aiResponse,
+      formData: formData
+    }
+
+    // 重置保存状态
+    this.setData({ isSaving: false })
+
+    wx.showModal({
+      title: '🎉 AI规划完成',
+      content: content + '\n\n您是否要保存这个行程规划？',
+      confirmText: '保存行程',
+      cancelText: '重新生成',
+      success: (res) => {
+        if (res.confirm) {
+          // 用户选择保存
+          this.saveCurrentPlan()
+        } else {
+          // 用户选择重新生成，显示提示
+          wx.showModal({
+            title: '提示',
+            content: '是否要重新生成行程规划？\n当前规划不会被保存。',
+            confirmText: '重新生成',
+            cancelText: '返回',
+            success: (modalRes) => {
+              if (modalRes.confirm) {
+                // 重新生成 - 清除之前的数据，防止重复
+                this.currentPlanData = null
+                this.setData({ isSaving: false })
+                // 直接重新调用提交
+                this.onSubmit()
+              } else {
+                // 返回上一页
+                wx.navigateBack()
+              }
+            }
+          })
+        }
+      }
+    })
+  },
+
+  // 显示规划结果（原有方法保留作为备用）
   showPlanResult(aiResponse, planData) {
     const content = aiResponse.length > 500 
       ? aiResponse.substring(0, 500) + '...\n\n完整行程已保存，请在"我的行程"中查看' 
@@ -312,5 +347,80 @@ Page({
         }
       }
     })
+  },
+
+  // 保存当前计划
+  async saveCurrentPlan() {
+    if (!this.currentPlanData) {
+      wx.showToast({
+        title: '没有可保存的行程',
+        icon: 'none'
+      })
+      return
+    }
+
+    // 防止重复保存
+    if (this.data.isSaving) {
+      wx.showToast({
+        title: '正在保存中，请稍候',
+        icon: 'loading'
+      })
+      return
+    }
+    
+    this.setData({ isSaving: true })
+    const userId = Auth.getCurrentUserId()
+    
+    this.setData({ isLoading: true })
+
+    try {
+      console.log('开始保存行程，标题:', this.currentPlanData.planData.title)
+      
+      // 调用保存服务
+      const result = await aiIntegration.savePlanOnly(userId, this.currentPlanData.planData)
+      
+      console.log('保存行程结果:', result)
+
+      this.setData({ isLoading: false })
+      this.setData({ isSaving: false })
+
+      if (result.success) {
+        console.log('行程保存成功，ID:', result.data?.id)
+        
+        wx.showToast({
+          title: '行程已保存',
+          icon: 'success',
+          duration: 1500
+        })
+
+        // 清除当前数据，防止重复保存
+        this.currentPlanData = null
+
+        // 1.5秒后返回行程列表页
+        setTimeout(() => {
+          wx.switchTab({
+            url: '/pages/travel-plans/travel-plans'
+          })
+        }, 1500)
+      } else {
+        this.setData({ isSaving: false })
+        wx.showModal({
+          title: '保存失败',
+          content: result.error || '保存行程时出现错误，请重试',
+          showCancel: false,
+          confirmText: '知道了'
+        })
+      }
+    } catch (error) {
+      this.setData({ isLoading: false })
+      this.setData({ isSaving: false })
+      console.error('保存行程失败:', error)
+      wx.showModal({
+        title: '保存失败',
+        content: '保存行程时出现错误，请重试',
+        showCancel: false,
+        confirmText: '知道了'
+      })
+    }
   }
 })
