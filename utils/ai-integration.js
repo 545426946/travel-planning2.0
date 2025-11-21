@@ -62,22 +62,29 @@ class AIIntegration {
 
       console.log('开始保存行程数据:', planData.title)
 
-      // 🔍 防重复检查：检查最近是否保存过相同行程
+      // 🔒 强化防重复检查：检查最近5分钟内是否有相同行程
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+      
       try {
-        const existingPlans = await db.travelPlans.getByUserId(userId, 'planned', 10)
+        const existingPlans = await db.travelPlans.getByUserId(userId, 'planned', 20)
         if (existingPlans.data && existingPlans.data.length > 0) {
-          const duplicatePlan = existingPlans.data.find(plan => {
-            // 检查目的地和日期是否完全相同
+          const recentPlans = existingPlans.data.filter(plan => 
+            new Date(plan.created_at) >= new Date(fiveMinutesAgo)
+          )
+          
+          const duplicatePlan = recentPlans.find(plan => {
+            // 强化重复检查条件：标题、目的地、天数、人数都相同
+            const sameTitle = plan.title === planData.title
             const sameDestination = plan.destination === planData.destination
             const sameStartDate = plan.start_date === planData.startDate
             const sameEndDate = plan.end_date === planData.endDate
             const sameTravelers = plan.travelers_count === planData.travelersCount
             
-            return sameDestination && sameStartDate && sameEndDate && sameTravelers
+            return sameTitle && sameDestination && sameStartDate && sameEndDate && sameTravelers
           })
           
           if (duplicatePlan) {
-            console.log('发现重复行程，阻止保存:', duplicatePlan.id)
+            console.log('发现5分钟内重复行程，阻止保存:', duplicatePlan.id, duplicatePlan.title)
             return { 
               success: false, 
               error: '您已经保存过相同的行程了，请勿重复保存',
@@ -88,7 +95,6 @@ class AIIntegration {
         }
       } catch (checkError) {
         console.log('重复检查失败，继续保存:', checkError)
-        // 检查失败时不应该阻止保存，继续正常流程
       }
 
       // 保存到数据库
@@ -128,7 +134,13 @@ class AIIntegration {
       console.error('保存行程失败:', error)
       
       // 处理数据库唯一约束冲突
-      if (error.message && error.message.includes('unique')) {
+      if (error.message && (
+        error.message.includes('unique') || 
+        error.message.includes('duplicate key') ||
+        error.message.includes('duplicate') ||
+        error.message.includes('违反唯一约束')
+      )) {
+        console.log('触发唯一约束，阻止重复保存')
         return { 
           success: false, 
           error: '该行程已存在，请勿重复保存',
