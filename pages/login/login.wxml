@@ -115,6 +115,7 @@
         bindtap="wechatLogin"
         loading="{{isLoading}}"
         disabled="{{isLoading}}"
+        hover-class="button-hover"
       >
         <text class="wechat-logo">🟢</text>
         {{isLoading ? '授权中' : '微信一键登录'}}

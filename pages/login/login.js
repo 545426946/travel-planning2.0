@@ -166,13 +166,25 @@ Page({
   },
 
   // 微信一键登录
-  async wechatLogin() {
+  async wechatLogin(e) {
+    // 阻止冒泡，确保是用户直接点击
+    if (e) {
+      console.log('✅ 用户点击事件:', e.type)
+    }
+
     this.setData({ isLoading: true })
 
     try {
       console.log('=== 开始微信登录流程 ===')
 
-      // 1. 先调用微信登录获取code
+      // 重要：getUserProfile 必须在用户手势事件中直接调用
+      // 不能在 await 之后调用，所以先获取用户信息
+      console.log('1️⃣ 获取用户信息...')
+      const userInfoRes = await this.getUserProfile()
+      console.log('✅ 获取用户信息成功:', userInfoRes.userInfo)
+
+      // 然后再调用微信登录获取code
+      console.log('2️⃣ 调用微信登录...')
       const loginRes = await this.wechatLoginRequest()
       
       if (!loginRes.code) {
@@ -180,10 +192,6 @@ Page({
       }
 
       console.log('✅ wx.login 成功, code:', loginRes.code)
-
-      // 2. 获取用户信息（必须在用户手势中调用，如button的bindtap）
-      const userInfoRes = await this.getUserProfile()
-      console.log('✅ 获取用户信息成功:', userInfoRes.userInfo)
 
       // 3. 构建用户数据
       // 注意：在生产环境中，应该将code发送到后端，后端调用微信API换取openid和session_key
@@ -339,14 +347,16 @@ Page({
   // 获取用户信息（使用 getUserProfile）
   getUserProfile() {
     return new Promise((resolve, reject) => {
+      console.log('📝 调用 wx.getUserProfile...')
       wx.getUserProfile({
         desc: '用于完善用户资料，提供更好的旅行规划服务',
+        lang: 'zh_CN',
         success: (res) => {
-          console.log('getUserProfile 成功:', res)
+          console.log('✅ getUserProfile 成功:', res)
           resolve(res)
         },
         fail: (err) => {
-          console.error('getUserProfile 失败:', err)
+          console.error('❌ getUserProfile 失败:', err)
           reject(err)
         }
       })
