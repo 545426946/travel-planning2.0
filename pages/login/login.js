@@ -26,10 +26,16 @@ Page({
   },
 
   onLoad() {
-    console.log('登录页面加载')
+    console.log('========================================')
+    console.log('✅ 登录页面加载成功')
+    console.log('当前页面 data:', this.data)
+    console.log('========================================')
+    
     // 检查是否已登录
     if (Auth.isLoggedIn()) {
+      console.log('⚠️ 用户已登录，跳转到首页')
       this.redirectToHome()
+      return
     }
     
     // 加载保存的用户名
@@ -39,6 +45,7 @@ Page({
   // 切换登录方式
   switchLoginType(e) {
     const type = parseInt(e.currentTarget.dataset.type)
+    console.log('🔄 切换登录方式:', type === 0 ? '账号登录' : '微信登录')
     this.setData({ loginType: type })
   },
 
@@ -167,9 +174,11 @@ Page({
 
   // 微信一键登录 - 简化版本，不依赖getUserProfile
   wechatLogin() {
-    console.log('=== 微信登录(简化版) ===')
+    console.log('=== 微信登录按钮被点击了！ ===')
+    console.log('当前 isLoading 状态:', this.data.isLoading)
     
     this.setData({ isLoading: true })
+    console.log('设置 isLoading 为 true')
 
     // 方案1: 使用模拟数据直接登录（用于测试）
     wx.showModal({
