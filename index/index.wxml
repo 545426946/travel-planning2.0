@@ -4,7 +4,7 @@
     <view class="header-section">
       <view class="top-bar">
         <text class="logo">AI Travel</text>
-        <view class="user-info" wx:if="{{userInfo}}">
+        <view class="user-info" wx:if="{{userInfo}}" bindtap="showUserOptions">
           <image class="user-avatar" src="{{userInfo.avatar}}" mode="aspectFill" binderror="onImageError"></image>
           <text class="username">{{userInfo.name}}</text>
         </view>
@@ -127,7 +127,7 @@
   <!-- 个人主页 -->
   <scroll-view wx:if="{{currentTab === 3}}" class="scroll-area" scroll-y>
     <view class="profile-header" wx:if="{{userInfo}}">
-      <image src="{{userInfo.avatar}}" mode="aspectFill" class="avatar" />
+      <image src="{{userInfo.avatar}}" mode="aspectFill" class="avatar" bindtap="showUserOptions" />
       <text class="username">{{userInfo.name}}</text>
       <view class="stats-row">
         <view class="stat-item">
@@ -163,13 +163,21 @@
     </view>
     
     <view class="settings-section">
-      <view class="setting-item">
+      <view class="setting-item" bindtap="showSettings">
         <icon type="settings" size="20" color="#333"></icon>
         <text>设置</text>
+      </view>
+      <view class="setting-item" bindtap="showUserProfile" wx:if="{{userInfo}}">
+        <icon type="person" size="20" color="#333"></icon>
+        <text>个人资料</text>
       </view>
       <view class="setting-item">
         <icon type="help" size="20" color="#333"></icon>
         <text>帮助与反馈</text>
+      </view>
+      <view class="setting-item logout-item" bindtap="logout" wx:if="{{userInfo}}">
+        <icon type="close" size="20" color="#FF6B6B"></icon>
+        <text style="color: #FF6B6B;">退出登录</text>
       </view>
     </view>
   </scroll-view>

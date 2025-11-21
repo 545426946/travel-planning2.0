@@ -549,8 +549,11 @@ Page({
   // 用户登出
   logout() {
     wx.showModal({
-      title: '确认退出',
-      content: '确定要退出登录吗？',
+      title: '退出登录',
+      content: '确定要退出登录吗?',
+      confirmText: '退出',
+      confirmColor: '#FF6B6B',
+      cancelText: '取消',
       success: (res) => {
         if (res.confirm) {
           // 使用Auth工具清除登录信息
@@ -562,16 +565,20 @@ Page({
             stats: { visitedPlaces: 0, favoriteRoutes: 0 },
             myTravelPlans: [],
             travelPlans: [],
-            aiRecommendations: []
+            aiRecommendations: [],
+            currentTab: 0  // 切换到首页
           })
 
           wx.showToast({
             title: '已退出登录',
-            icon: 'success'
+            icon: 'success',
+            duration: 1500
           })
 
           // 重新加载基础数据（不依赖用户的数据）
-          this.loadDestinations()
+          setTimeout(() => {
+            this.loadDestinations()
+          }, 500)
         }
       }
     })
@@ -586,6 +593,7 @@ Page({
 
     wx.showActionSheet({
       itemList: ['个人资料', '我的收藏', '设置', '退出登录'],
+      itemColor: '#2c3e50',
       success: (res) => {
         switch (res.tapIndex) {
           case 0:
@@ -594,7 +602,7 @@ Page({
             break
           case 1:
             // 我的收藏
-            this.switchToTab(3)
+            this.setData({ currentTab: 3 })
             break
           case 2:
             // 设置

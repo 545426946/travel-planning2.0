@@ -27,8 +27,18 @@
     "useApiHook": true,
     "useApiHostProcess": true,
     "babelSetting": {
-      "ignore": ["**"],
-      "disablePlugins": ["@babel/plugin-transform-spread", "@babel/plugin-transform-destructuring", "@babel/plugin-transform-parameters", "@babel/plugin-transform-arrow-functions", "@babel/plugin-transform-async-to-generator", "@babel/plugin-transform-block-scoping", "@babel/plugin-transform-template-literals"],
+      "ignore": [
+        "**"
+      ],
+      "disablePlugins": [
+        "@babel/plugin-transform-spread",
+        "@babel/plugin-transform-destructuring",
+        "@babel/plugin-transform-parameters",
+        "@babel/plugin-transform-arrow-functions",
+        "@babel/plugin-transform-async-to-generator",
+        "@babel/plugin-transform-block-scoping",
+        "@babel/plugin-transform-template-literals"
+      ],
       "outputPath": ""
     },
     "enableEngineNative": false,
@@ -50,7 +60,7 @@
   },
   "compileType": "miniprogram",
   "libVersion": "2.19.4",
-  "appid": "wx31db19e0efdc4d9d",
+  "appid": "wxb9ca37c30f43d5b8",
   "projectname": "AI Travel",
   "isGameTourist": false,
   "condition": {
