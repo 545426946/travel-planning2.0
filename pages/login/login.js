@@ -170,20 +170,20 @@ Page({
     this.setData({ isLoading: true })
 
     try {
-      console.log('开始微信登录流程...')
+      console.log('=== 开始微信登录流程 ===')
 
-      // 1. 先获取用户信息（必须在用户手势中调用，如button的bindtap）
-      const userInfoRes = await this.getUserProfile()
-      console.log('获取用户信息成功:', userInfoRes.userInfo)
-
-      // 2. 调用微信登录获取code
+      // 1. 先调用微信登录获取code
       const loginRes = await this.wechatLoginRequest()
       
       if (!loginRes.code) {
         throw new Error('微信登录授权失败')
       }
 
-      console.log('微信登录code:', loginRes.code)
+      console.log('✅ wx.login 成功, code:', loginRes.code)
+
+      // 2. 获取用户信息（必须在用户手势中调用，如button的bindtap）
+      const userInfoRes = await this.getUserProfile()
+      console.log('✅ 获取用户信息成功:', userInfoRes.userInfo)
 
       // 3. 构建用户数据
       // 注意：在生产环境中，应该将code发送到后端，后端调用微信API换取openid和session_key
@@ -202,49 +202,41 @@ Page({
         loginType: 'wechat'
       }
 
-      console.log('用户数据:', userData)
+      console.log('✅ 用户数据构建完成:', userData)
 
-      // 4. 查询数据库中是否已存在该用户
-      const existingUserResult = await new Promise((resolve) => {
-        supabase
+      // 4. 尝试保存到数据库(如果失败也继续登录流程)
+      let dbUserId = timestamp
+      try {
+        console.log('📝 尝试保存用户信息到数据库...')
+        
+        // 先查询是否存在
+        const { data: existingUsers, error: queryError } = await supabase
           .from('users')
           .select('*')
-          .eq('openid', userData.openid)
+          .eq('name', userData.name)
           .limit(1)
-          .then(resolve)
-      })
 
-      let finalUserInfo
-
-      if (existingUserResult.data && existingUserResult.data.length > 0) {
-        // 用户已存在，更新登录时间和头像
-        console.log('用户已存在，更新信息')
-        const updateResult = await new Promise((resolve) => {
-          supabase
+        if (queryError) {
+          console.warn('⚠️ 查询用户失败:', queryError)
+        } else if (existingUsers && existingUsers.length > 0) {
+          // 用户已存在，使用已有ID
+          dbUserId = existingUsers[0].id
+          console.log('✅ 用户已存在, ID:', dbUserId)
+          
+          // 更新登录时间
+          await supabase
             .from('users')
             .update({
-              name: userData.name,
               avatar: userData.avatar,
               last_login: new Date().toISOString()
             })
-            .eq('openid', userData.openid)
-            .select()
-            .then(resolve)
-        })
-
-        if (updateResult.data && updateResult.data.length > 0) {
-          finalUserInfo = updateResult.data[0]
+            .eq('id', dbUserId)
         } else {
-          finalUserInfo = existingUserResult.data[0]
-        }
-      } else {
-        // 新用户，创建账号
-        console.log('新用户，创建账号')
-        const insertResult = await new Promise((resolve) => {
-          supabase
+          // 新用户，创建账号
+          console.log('📝 创建新用户...')
+          const { data: newUser, error: insertError } = await supabase
             .from('users')
             .insert({
-              openid: userData.openid,
               name: userData.name,
               avatar: userData.avatar,
               gender: userData.gender,
@@ -256,35 +248,38 @@ Page({
               last_login: new Date().toISOString()
             })
             .select()
-            .then(resolve)
-        })
 
-        if (insertResult.error) {
-          console.error('创建用户失败:', insertResult.error)
-          throw new Error('创建用户失败')
+          if (insertError) {
+            console.warn('⚠️ 创建用户失败:', insertError)
+          } else if (newUser && newUser.length > 0) {
+            dbUserId = newUser[0].id
+            console.log('✅ 新用户创建成功, ID:', dbUserId)
+          }
         }
-
-        finalUserInfo = insertResult.data[0]
+      } catch (dbError) {
+        console.warn('⚠️ 数据库操作失败，但继续登录流程:', dbError)
       }
-
-      console.log('最终用户信息:', finalUserInfo)
 
       // 5. 构建登录用户信息
       const loginUserInfo = {
-        id: finalUserInfo.id,
-        name: finalUserInfo.name,
-        avatar: finalUserInfo.avatar,
-        openid: finalUserInfo.openid,
-        gender: finalUserInfo.gender,
-        city: finalUserInfo.city,
-        province: finalUserInfo.province,
-        country: finalUserInfo.country,
+        id: dbUserId,
+        name: userData.name,
+        avatar: userData.avatar,
+        openid: userData.openid,
+        gender: userData.gender,
+        city: userData.city,
+        province: userData.province,
+        country: userData.country,
         loginType: 'wechat',
-        token: Auth.generateToken(finalUserInfo.id)
+        token: Auth.generateToken(dbUserId)
       }
+
+      console.log('✅ 登录用户信息:', loginUserInfo)
 
       // 6. 使用Auth工具保存登录状态
       Auth.saveUserLogin(loginUserInfo, true) // 微信登录默认记住登录状态
+
+      console.log('✅ 登录状态已保存')
 
       wx.showToast({
         title: '登录成功',
@@ -294,16 +289,23 @@ Page({
 
       // 7. 延迟跳转到首页
       setTimeout(() => {
+        console.log('🏠 跳转到首页')
         this.redirectToHome()
       }, 1500)
 
     } catch (error) {
-      console.error('微信登录失败:', error)
+      console.error('❌ 微信登录失败:', error)
       
       // 根据不同的错误类型显示不同的提示
       let errorMsg = '微信登录失败'
-      if (error.errMsg && error.errMsg.includes('getUserProfile:fail auth deny')) {
-        errorMsg = '您拒绝了授权，无法登录'
+      if (error.errMsg) {
+        if (error.errMsg.includes('getUserProfile:fail auth deny')) {
+          errorMsg = '您拒绝了授权，无法登录'
+        } else if (error.errMsg.includes('getUserProfile')) {
+          errorMsg = '获取用户信息失败'
+        } else if (error.errMsg.includes('login:fail')) {
+          errorMsg = '微信登录接口调用失败'
+        }
       } else if (error.message) {
         errorMsg = error.message
       }
@@ -311,7 +313,7 @@ Page({
       wx.showToast({
         title: errorMsg,
         icon: 'none',
-        duration: 2000
+        duration: 3000
       })
     } finally {
       this.setData({ isLoading: false })
