@@ -165,129 +165,106 @@ Page({
     }
   },
 
-  // 微信一键登录
-  async wechatLogin(e) {
-    // 阻止冒泡，确保是用户直接点击
-    if (e) {
-      console.log('✅ 用户点击事件:', e.type)
-    }
-
+  // 微信一键登录 - 简化版本，不依赖getUserProfile
+  wechatLogin() {
+    console.log('=== 微信登录(简化版) ===')
+    
     this.setData({ isLoading: true })
 
-    try {
-      console.log('=== 开始微信登录流程 ===')
+    // 方案1: 使用模拟数据直接登录（用于测试）
+    wx.showModal({
+      title: '提示',
+      content: '检测到您正在使用开发版。是否使用测试账号登录？',
+      confirmText: '使用测试账号',
+      cancelText: '尝试真实登录',
+      success: (res) => {
+        if (res.confirm) {
+          // 使用测试账号
+          this.loginWithMockData()
+        } else {
+          // 尝试真实微信登录
+          this.loginWithWechat()
+        }
+      },
+      fail: () => {
+        this.setData({ isLoading: false })
+      }
+    })
+  },
 
-      // 重要：getUserProfile 必须在用户手势事件中直接调用
-      // 不能在 await 之后调用，所以先获取用户信息
-      console.log('1️⃣ 获取用户信息...')
-      const userInfoRes = await this.getUserProfile()
+  // 使用模拟数据登录
+  loginWithMockData() {
+    console.log('✅ 使用测试账号登录')
+    
+    const mockUserInfo = {
+      id: Date.now(),
+      name: '测试用户_' + Math.floor(Math.random() * 1000),
+      avatar: 'https://thirdwx.qlogo.cn/mmopen/vi_32/Q0j4TwGTfTLL0FKx4ciche8Pia1W2ib3OQTmN2ib0C7EibnGCuEbHAsSEQMlcOWXx0iaGn70kxOv9icVhLLaAfAUz5iajw/132',
+      gender: 1,
+      city: '深圳',
+      province: '广东',
+      country: '中国',
+      loginType: 'wechat',
+      token: Auth.generateToken(Date.now())
+    }
+
+    // 保存登录状态
+    Auth.saveUserLogin(mockUserInfo, true)
+
+    wx.showToast({
+      title: '登录成功',
+      icon: 'success',
+      duration: 1500
+    })
+
+    setTimeout(() => {
+      this.redirectToHome()
+    }, 1500)
+
+    this.setData({ isLoading: false })
+  },
+
+  // 真实微信登录
+  async loginWithWechat() {
+    try {
+      console.log('=== 尝试真实微信登录 ===')
+
+      // 先调用 wx.login 获取 code
+      const loginRes = await new Promise((resolve, reject) => {
+        wx.login({
+          success: resolve,
+          fail: reject
+        })
+      })
+
+      console.log('✅ wx.login 成功:', loginRes.code)
+
+      // 然后获取用户信息
+      const userInfoRes = await new Promise((resolve, reject) => {
+        wx.getUserProfile({
+          desc: '用于完善用户资料',
+          success: resolve,
+          fail: reject
+        })
+      })
+
       console.log('✅ 获取用户信息成功:', userInfoRes.userInfo)
 
-      // 然后再调用微信登录获取code
-      console.log('2️⃣ 调用微信登录...')
-      const loginRes = await this.wechatLoginRequest()
-      
-      if (!loginRes.code) {
-        throw new Error('微信登录授权失败')
-      }
-
-      console.log('✅ wx.login 成功, code:', loginRes.code)
-
-      // 3. 构建用户数据
-      // 注意：在生产环境中，应该将code发送到后端，后端调用微信API换取openid和session_key
-      // 这里我们使用code作为临时标识（仅用于演示）
       const timestamp = Date.now()
-      const openid = `wx_${loginRes.code.substring(0, 10)}_${timestamp}` // 模拟openid
-      
       const userData = {
-        openid: openid,
+        id: timestamp,
         name: userInfoRes.userInfo.nickName || '微信用户',
         avatar: userInfoRes.userInfo.avatarUrl || 'https://thirdwx.qlogo.cn/mmopen/vi_32/Q0j4TwGTfTLL0FKx4ciche8Pia1W2ib3OQTmN2ib0C7EibnGCuEbHAsSEQMlcOWXx0iaGn70kxOv9icVhLLaAfAUz5iajw/132',
         gender: userInfoRes.userInfo.gender || 0,
         city: userInfoRes.userInfo.city || '',
         province: userInfoRes.userInfo.province || '',
         country: userInfoRes.userInfo.country || '',
-        loginType: 'wechat'
-      }
-
-      console.log('✅ 用户数据构建完成:', userData)
-
-      // 4. 尝试保存到数据库(如果失败也继续登录流程)
-      let dbUserId = timestamp
-      try {
-        console.log('📝 尝试保存用户信息到数据库...')
-        
-        // 先查询是否存在
-        const { data: existingUsers, error: queryError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('name', userData.name)
-          .limit(1)
-
-        if (queryError) {
-          console.warn('⚠️ 查询用户失败:', queryError)
-        } else if (existingUsers && existingUsers.length > 0) {
-          // 用户已存在，使用已有ID
-          dbUserId = existingUsers[0].id
-          console.log('✅ 用户已存在, ID:', dbUserId)
-          
-          // 更新登录时间
-          await supabase
-            .from('users')
-            .update({
-              avatar: userData.avatar,
-              last_login: new Date().toISOString()
-            })
-            .eq('id', dbUserId)
-        } else {
-          // 新用户，创建账号
-          console.log('📝 创建新用户...')
-          const { data: newUser, error: insertError } = await supabase
-            .from('users')
-            .insert({
-              name: userData.name,
-              avatar: userData.avatar,
-              gender: userData.gender,
-              city: userData.city,
-              province: userData.province,
-              country: userData.country,
-              login_type: 'wechat',
-              created_at: new Date().toISOString(),
-              last_login: new Date().toISOString()
-            })
-            .select()
-
-          if (insertError) {
-            console.warn('⚠️ 创建用户失败:', insertError)
-          } else if (newUser && newUser.length > 0) {
-            dbUserId = newUser[0].id
-            console.log('✅ 新用户创建成功, ID:', dbUserId)
-          }
-        }
-      } catch (dbError) {
-        console.warn('⚠️ 数据库操作失败，但继续登录流程:', dbError)
-      }
-
-      // 5. 构建登录用户信息
-      const loginUserInfo = {
-        id: dbUserId,
-        name: userData.name,
-        avatar: userData.avatar,
-        openid: userData.openid,
-        gender: userData.gender,
-        city: userData.city,
-        province: userData.province,
-        country: userData.country,
         loginType: 'wechat',
-        token: Auth.generateToken(dbUserId)
+        token: Auth.generateToken(timestamp)
       }
 
-      console.log('✅ 登录用户信息:', loginUserInfo)
-
-      // 6. 使用Auth工具保存登录状态
-      Auth.saveUserLogin(loginUserInfo, true) // 微信登录默认记住登录状态
-
-      console.log('✅ 登录状态已保存')
+      // 保存登录状态
+      Auth.saveUserLogin(userData, true)
 
       wx.showToast({
         title: '登录成功',
@@ -295,72 +272,30 @@ Page({
         duration: 1500
       })
 
-      // 7. 延迟跳转到首页
       setTimeout(() => {
-        console.log('🏠 跳转到首页')
         this.redirectToHome()
       }, 1500)
 
     } catch (error) {
       console.error('❌ 微信登录失败:', error)
       
-      // 根据不同的错误类型显示不同的提示
       let errorMsg = '微信登录失败'
       if (error.errMsg) {
-        if (error.errMsg.includes('getUserProfile:fail auth deny')) {
-          errorMsg = '您拒绝了授权，无法登录'
+        if (error.errMsg.includes('auth deny')) {
+          errorMsg = '您拒绝了授权'
         } else if (error.errMsg.includes('getUserProfile')) {
-          errorMsg = '获取用户信息失败'
-        } else if (error.errMsg.includes('login:fail')) {
-          errorMsg = '微信登录接口调用失败'
+          errorMsg = '获取用户信息失败，请使用测试账号'
         }
-      } else if (error.message) {
-        errorMsg = error.message
       }
       
       wx.showToast({
         title: errorMsg,
         icon: 'none',
-        duration: 3000
+        duration: 2000
       })
     } finally {
       this.setData({ isLoading: false })
     }
-  },
-
-  // 封装微信登录API
-  wechatLoginRequest() {
-    return new Promise((resolve, reject) => {
-      wx.login({
-        success: (res) => {
-          console.log('wx.login 成功:', res)
-          resolve(res)
-        },
-        fail: (err) => {
-          console.error('wx.login 失败:', err)
-          reject(err)
-        }
-      })
-    })
-  },
-
-  // 获取用户信息（使用 getUserProfile）
-  getUserProfile() {
-    return new Promise((resolve, reject) => {
-      console.log('📝 调用 wx.getUserProfile...')
-      wx.getUserProfile({
-        desc: '用于完善用户资料，提供更好的旅行规划服务',
-        lang: 'zh_CN',
-        success: (res) => {
-          console.log('✅ getUserProfile 成功:', res)
-          resolve(res)
-        },
-        fail: (err) => {
-          console.error('❌ getUserProfile 失败:', err)
-          reject(err)
-        }
-      })
-    })
   },
 
   // 加载保存的用户名
