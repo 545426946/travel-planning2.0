@@ -56,8 +56,8 @@ App({
     }
   },
 
-  // 微信登录方法
-  wechatLogin() {
+  // 微信登录方法（支持获取真实用户信息）
+  wechatLogin(userInfo = null) {
     return new Promise((resolve, reject) => {
       // 微信登录获取code
       wx.login({
@@ -65,14 +65,23 @@ App({
           if (loginRes.code) {
             console.log('微信登录成功，code:', loginRes.code)
             
-            // 这里应该调用后端接口，用微信code换取用户信息
-            // 暂时使用模拟数据
-            const mockUserInfo = {
-              id: '123456',
-              name: '旅行达人小张',
-              avatar: 'https://ai-public.mastergo.com/ai/img_res/65805eacde859672f105ac7cb9520d50.jpg',
+            // 生成临时openid（实际应该通过后端用code换取真实openid）
+            const timestamp = Date.now()
+            const openid = userInfo && userInfo.openid 
+              ? userInfo.openid 
+              : `wx_${loginRes.code.substring(0, 10)}_${timestamp}`
+            
+            // 构建用户信息
+            const finalUserInfo = {
+              id: userInfo?.id || timestamp,
+              name: userInfo?.name || userInfo?.nickName || '微信用户',
+              avatar: userInfo?.avatar || userInfo?.avatarUrl || 'https://thirdwx.qlogo.cn/mmopen/vi_32/Q0j4TwGTfTLL0FKx4ciche8Pia1W2ib3OQTmN2ib0C7EibnGCuEbHAsSEQMlcOWXx0iaGn70kxOv9icVhLLaAfAUz5iajw/132',
               token: loginRes.code,
-              openid: 'mock_openid_' + Date.now(),
+              openid: openid,
+              gender: userInfo?.gender || 0,
+              city: userInfo?.city || '',
+              province: userInfo?.province || '',
+              country: userInfo?.country || '',
               loginType: 'wechat'
             }
             
@@ -80,9 +89,13 @@ App({
             supabase
               .from('users')
               .upsert({
-                openid: mockUserInfo.openid,
-                name: mockUserInfo.name,
-                avatar: mockUserInfo.avatar,
+                openid: finalUserInfo.openid,
+                name: finalUserInfo.name,
+                avatar: finalUserInfo.avatar,
+                gender: finalUserInfo.gender,
+                city: finalUserInfo.city,
+                province: finalUserInfo.province,
+                country: finalUserInfo.country,
                 login_type: 'wechat',
                 last_login: new Date().toISOString()
               })
@@ -93,25 +106,25 @@ App({
                 if (error) {
                   console.warn('保存用户到数据库失败:', error)
                 } else if (data && data.length > 0) {
-                  mockUserInfo.id = data[0].id
+                  finalUserInfo.id = data[0].id
                   console.log('用户信息已保存到数据库:', data[0])
                 }
                 
-                this.globalData.userInfo = mockUserInfo
+                this.globalData.userInfo = finalUserInfo
                 this.globalData.isLoggedIn = true
                 
                 // 保存用户信息到本地存储
-                wx.setStorageSync('userInfo', mockUserInfo)
+                Auth.saveUserLogin(finalUserInfo, true)
                 
-                resolve(mockUserInfo)
+                resolve(finalUserInfo)
               })
               .catch((dbError) => {
                 console.warn('数据库操作出错:', dbError)
                 // 即使数据库操作失败，也继续登录流程
-                this.globalData.userInfo = mockUserInfo
+                this.globalData.userInfo = finalUserInfo
                 this.globalData.isLoggedIn = true
-                wx.setStorageSync('userInfo', mockUserInfo)
-                resolve(mockUserInfo)
+                Auth.saveUserLogin(finalUserInfo, true)
+                resolve(finalUserInfo)
               })
           } else {
             reject(new Error('获取微信登录code失败'))

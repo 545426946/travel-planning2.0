@@ -170,71 +170,148 @@ Page({
     this.setData({ isLoading: true })
 
     try {
-      // 先获取用户信息（必须在用户手势中调用）
-      const userInfoRes = await this.getUserProfile()
+      console.log('开始微信登录流程...')
 
-      // 调用微信登录
+      // 1. 先获取用户信息（必须在用户手势中调用，如button的bindtap）
+      const userInfoRes = await this.getUserProfile()
+      console.log('获取用户信息成功:', userInfoRes.userInfo)
+
+      // 2. 调用微信登录获取code
       const loginRes = await this.wechatLoginRequest()
       
       if (!loginRes.code) {
         throw new Error('微信登录授权失败')
       }
 
-      // 构建用户数据
+      console.log('微信登录code:', loginRes.code)
+
+      // 3. 构建用户数据
+      // 注意：在生产环境中，应该将code发送到后端，后端调用微信API换取openid和session_key
+      // 这里我们使用code作为临时标识（仅用于演示）
+      const timestamp = Date.now()
+      const openid = `wx_${loginRes.code.substring(0, 10)}_${timestamp}` // 模拟openid
+      
       const userData = {
-        openid: loginRes.code, // 实际应该通过后端换取openid
-        name: userInfoRes.nickName || '微信用户',
-        avatar: userInfoRes.avatarUrl || 'https://ai-public.mastergo.com/ai/img_res/65805eacde859672f105ac7cb9520d50.jpg',
+        openid: openid,
+        name: userInfoRes.userInfo.nickName || '微信用户',
+        avatar: userInfoRes.userInfo.avatarUrl || 'https://thirdwx.qlogo.cn/mmopen/vi_32/Q0j4TwGTfTLL0FKx4ciche8Pia1W2ib3OQTmN2ib0C7EibnGCuEbHAsSEQMlcOWXx0iaGn70kxOv9icVhLLaAfAUz5iajw/132',
+        gender: userInfoRes.userInfo.gender || 0,
+        city: userInfoRes.userInfo.city || '',
+        province: userInfoRes.userInfo.province || '',
+        country: userInfoRes.userInfo.country || '',
         loginType: 'wechat'
       }
 
-      // 保存或更新用户信息到数据库
-      const result = await supabase
-        .from('users')
-        .upsert({
-          openid: userData.openid,
-          name: userData.name,
-          avatar: userData.avatar,
-          last_login: new Date().toISOString()
-        }, {
-          onConflict: 'openid'
+      console.log('用户数据:', userData)
+
+      // 4. 查询数据库中是否已存在该用户
+      const existingUserResult = await new Promise((resolve) => {
+        supabase
+          .from('users')
+          .select('*')
+          .eq('openid', userData.openid)
+          .limit(1)
+          .then(resolve)
+      })
+
+      let finalUserInfo
+
+      if (existingUserResult.data && existingUserResult.data.length > 0) {
+        // 用户已存在，更新登录时间和头像
+        console.log('用户已存在，更新信息')
+        const updateResult = await new Promise((resolve) => {
+          supabase
+            .from('users')
+            .update({
+              name: userData.name,
+              avatar: userData.avatar,
+              last_login: new Date().toISOString()
+            })
+            .eq('openid', userData.openid)
+            .select()
+            .then(resolve)
         })
-        .select()
 
-      const data = result.data;
-      const error = result.error;
+        if (updateResult.data && updateResult.data.length > 0) {
+          finalUserInfo = updateResult.data[0]
+        } else {
+          finalUserInfo = existingUserResult.data[0]
+        }
+      } else {
+        // 新用户，创建账号
+        console.log('新用户，创建账号')
+        const insertResult = await new Promise((resolve) => {
+          supabase
+            .from('users')
+            .insert({
+              openid: userData.openid,
+              name: userData.name,
+              avatar: userData.avatar,
+              gender: userData.gender,
+              city: userData.city,
+              province: userData.province,
+              country: userData.country,
+              login_type: 'wechat',
+              created_at: new Date().toISOString(),
+              last_login: new Date().toISOString()
+            })
+            .select()
+            .then(resolve)
+        })
 
-      if (error) {
-        console.warn('保存微信用户失败:', error)
+        if (insertResult.error) {
+          console.error('创建用户失败:', insertResult.error)
+          throw new Error('创建用户失败')
+        }
+
+        finalUserInfo = insertResult.data[0]
       }
 
-      // 构建登录用户信息
-      const finalUserInfo = {
-        id: data?.[0]?.id || Date.now(),
-        name: userData.name,
-        avatar: userData.avatar,
-        openid: userData.openid,
+      console.log('最终用户信息:', finalUserInfo)
+
+      // 5. 构建登录用户信息
+      const loginUserInfo = {
+        id: finalUserInfo.id,
+        name: finalUserInfo.name,
+        avatar: finalUserInfo.avatar,
+        openid: finalUserInfo.openid,
+        gender: finalUserInfo.gender,
+        city: finalUserInfo.city,
+        province: finalUserInfo.province,
+        country: finalUserInfo.country,
         loginType: 'wechat',
-        token: Auth.generateToken(userData.openid)
+        token: Auth.generateToken(finalUserInfo.id)
       }
 
-      // 使用Auth工具保存登录状态
-      Auth.saveUserLogin(finalUserInfo, false)
+      // 6. 使用Auth工具保存登录状态
+      Auth.saveUserLogin(loginUserInfo, true) // 微信登录默认记住登录状态
 
       wx.showToast({
         title: '登录成功',
-        icon: 'success'
+        icon: 'success',
+        duration: 1500
       })
 
+      // 7. 延迟跳转到首页
       setTimeout(() => {
         this.redirectToHome()
       }, 1500)
 
     } catch (error) {
       console.error('微信登录失败:', error)
+      
+      // 根据不同的错误类型显示不同的提示
+      let errorMsg = '微信登录失败'
+      if (error.errMsg && error.errMsg.includes('getUserProfile:fail auth deny')) {
+        errorMsg = '您拒绝了授权，无法登录'
+      } else if (error.message) {
+        errorMsg = error.message
+      }
+      
       wx.showToast({
-        title: error.message || '微信登录失败',
-        icon: 'none'
+        title: errorMsg,
+        icon: 'none',
+        duration: 2000
       })
     } finally {
       this.setData({ isLoading: false })
@@ -245,19 +322,31 @@ Page({
   wechatLoginRequest() {
     return new Promise((resolve, reject) => {
       wx.login({
-        success: resolve,
-        fail: reject
+        success: (res) => {
+          console.log('wx.login 成功:', res)
+          resolve(res)
+        },
+        fail: (err) => {
+          console.error('wx.login 失败:', err)
+          reject(err)
+        }
       })
     })
   },
 
-  // 获取用户信息
+  // 获取用户信息（使用 getUserProfile）
   getUserProfile() {
     return new Promise((resolve, reject) => {
       wx.getUserProfile({
-        desc: '用于完善用户资料',
-        success: resolve,
-        fail: reject
+        desc: '用于完善用户资料，提供更好的旅行规划服务',
+        success: (res) => {
+          console.log('getUserProfile 成功:', res)
+          resolve(res)
+        },
+        fail: (err) => {
+          console.error('getUserProfile 失败:', err)
+          reject(err)
+        }
       })
     })
   },
