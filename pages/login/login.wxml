@@ -109,22 +109,22 @@
         <text class="tips-text">微信登录安全快捷</text>
       </view>
 
-      <!-- 主要登录按钮 - 使用 getUserProfile -->
+      <!-- 微信授权登录按钮 -->
       <button 
         class="login-btn wechat-btn" 
-        bindtap="wechatLoginWithProfile"
+        bindtap="handleWechatLoginOfficial"
         loading="{{isLoading}}"
         disabled="{{isLoading}}"
         hover-class="button-hover"
       >
         <text class="wechat-logo">🟢</text>
-        {{isLoading ? '授权中' : '微信一键登录'}}
+        {{isLoading ? '登录中...' : '微信登录'}}
       </button>
 
       <!-- 微信登录说明 -->
       <view class="wechat-desc">
-        <text class="auth-hint">💡 真机预览可获取真实微信信息</text>
-        <text class="auth-hint">💡 开发工具会显示为游客</text>
+        <text class="auth-hint">💡 点击按钮后将弹出授权窗口</text>
+        <text class="auth-hint">💡 授权后可获取您的微信昵称和头像</text>
         <text>登录即表示同意</text>
         <text class="link-text" bindtap="viewUserAgreement">《用户协议》</text>
         <text>和</text>

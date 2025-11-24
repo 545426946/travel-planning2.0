@@ -1,7 +1,7 @@
 // pages/login/login.js
 const supabase = require('../../utils/supabase').supabase
 const Auth = require('../../utils/auth').Auth
-const app = getApp()
+const { wechatLogin } = require('../../utils/wechat-login').wechatLogin
 
 Page({
   data: {
@@ -172,6 +172,138 @@ Page({
     }
   },
 
+  // 微信授权登录主方法 - 设置loading状态
+  handleWechatLogin() {
+    console.log('=========================================')
+    console.log('🚀 用户点击微信授权登录按钮')
+    console.log('当前环境：', wx.getSystemInfoSync().platform)
+    console.log('当前时间:', new Date().toLocaleString())
+    console.log('=========================================')
+    
+    // 防抖处理
+    if (this.data.isLoading) {
+      console.log('⚠️ 正在登录中，忽略重复点击')
+      return
+    }
+
+    // 设置loading状态，授权由按钮的open-type自动触发
+    this.setData({ isLoading: true })
+    console.log('✅ 设置loading状态，等待用户授权...')
+  },
+
+  // 完成微信登录（保存用户信息并跳转）- 增强版
+  async completeWechatLogin(code, userInfo) {
+    console.log('=========================================')
+    console.log('🔄 步骤3: 处理登录数据')
+    console.log('   - code:', code)
+    console.log('   - userInfo:', userInfo)
+    console.log('=========================================')
+    
+    try {
+      const timestamp = Date.now()
+      const isRealUser = userInfo && !userInfo.isEnhancedGuest
+      const isEnhancedGuest = userInfo && userInfo.isEnhancedGuest
+      
+      // 构建用户数据
+      const userData = {
+        id: timestamp,
+        openid: `wx_${code.substring(0, 10)}_${timestamp}`,
+        code: code,
+        name: userInfo ? (userInfo.nickName || '微信用户') : `游客${Math.floor(Math.random() * 10000)}`,
+        avatar: userInfo ? (userInfo.avatarUrl || 'https://thirdwx.qlogo.cn/mmopen/vi_32/POgEwh4mIHO4nibH0KlMECNjjGxQUl24cLiaEwdBbCHnElQzBf0x9Yc2icJ0Y9nSKhEXQnGHVicHjaNQ6GoAhjibcPA/132') : 'https://thirdwx.qlogo.cn/mmopen/vi_32/Q0j4TwGTfTLL0FKx4ciche8Pia1W2ib3OQTmN2ib0C7EibnGCuEbHAsSEQMlcOWXx0iaGn70kxOv9icVhLLaAfAUz5iajw/132',
+        gender: userInfo ? (userInfo.gender || 0) : 0,
+        city: userInfo ? (userInfo.city || '') : '',
+        province: userInfo ? (userInfo.province || '') : '',
+        country: userInfo ? (userInfo.country || '') : '',
+        loginType: 'wechat',
+        hasRealInfo: isRealUser,
+        isEnhancedGuest: isEnhancedGuest,
+        platform: userInfo ? userInfo.platform : 'unknown',
+        loginTime: timestamp,
+        token: Auth.generateToken(timestamp)
+      }
+
+      console.log('📦 构建的用户数据:')
+      console.log('   - 昵称:', userData.name)
+      console.log('   - 头像:', userData.avatar)
+      console.log('   - 登录类型:', isRealUser ? '✅ 真实微信用户' : (isEnhancedGuest ? '🔄 增强游客模式' : '❌ 基础游客模式'))
+      console.log('   - 平台:', userData.platform)
+
+      // 尝试保存到数据库
+      try {
+        const { error } = await supabase
+          .from('users')
+          .upsert({
+            openid: userData.openid,
+            name: userData.name,
+            avatar: userData.avatar,
+            gender: userData.gender,
+            city: userData.city,
+            province: userData.province,
+            country: userData.country,
+            login_type: 'wechat',
+            has_real_info: userData.hasRealInfo,
+            platform: userData.platform,
+            last_login_time: new Date().toISOString()
+          }, {
+            onConflict: 'openid'
+          })
+
+        if (error) {
+          console.warn('⚠️ 保存用户信息到数据库失败:', error.message)
+        } else {
+          console.log('✅ 用户信息已保存到数据库')
+        }
+      } catch (dbError) {
+        console.warn('⚠️ 数据库操作异常:', dbError)
+      }
+
+      // 保存登录状态到本地存储
+      console.log('💾 保存登录状态到本地...')
+      try {
+        Auth.saveUserLogin(userData, true)
+        console.log('✅ 登录状态已保存')
+      } catch (saveError) {
+        console.error('❌ 保存登录状态失败:', saveError)
+        throw saveError
+      }
+
+      // 显示优化后的成功提示
+      let toastTitle = '登录成功'
+      if (isRealUser) {
+        toastTitle = '微信登录成功'
+      } else if (isEnhancedGuest) {
+        toastTitle = '微信登录成功' // 不显示"游客"字样，避免用户困惑
+      } else {
+        toastTitle = '登录成功'
+      }
+
+      wx.showToast({
+        title: toastTitle,
+        icon: 'success',
+        duration: 1500
+      })
+
+      console.log('✅ 微信登录完成，1.5秒后跳转首页')
+      console.log('=========================================')
+
+      // 延迟跳转到首页
+      setTimeout(() => {
+        this.redirectToHome()
+      }, 1500)
+
+    } catch (error) {
+      console.error('❌ 处理登录数据失败:', error)
+      console.error('   - 错误栈:', error.stack)
+      wx.showToast({
+        title: '登录失败，请重试',
+        icon: 'none',
+        duration: 2000
+      })
+      this.setData({ isLoading: false })
+    }
+  },
+
   // 微信登录 - 使用 getUserProfile（真机支持）
   wechatLoginWithProfile() {
     console.log('=== 微信登录按钮被点击 ===')
@@ -308,7 +440,7 @@ Page({
     }
   },
 
-  // 处理微信授权回调（使用 open-type="getUserInfo" 方式）
+  // 处理微信授权回调（使用 open-type="getUserInfo" 方式）- 优化版
   async handleGetUserInfo(e) {
     console.log('===========================================')
     console.log('=== handleGetUserInfo 被调用 ===')
@@ -319,125 +451,104 @@ Page({
     console.log('e.detail.errMsg:', e.detail.errMsg)
     console.log('===========================================')
 
-    // 如果用户拒绝授权
-    if (!e.detail.userInfo) {
-      console.log('⚠️ 用户拒绝授权或未获取到用户信息')
-      console.log('errMsg:', e.detail.errMsg)
-      
-      // 尝试使用备用方案
-      if (e.detail.errMsg && e.detail.errMsg.includes('ok')) {
-        console.log('🔄 errMsg 显示 ok，但没有 userInfo，尝试使用备用方案')
-        this.wechatLoginFallback()
-        return
-      }
-      
-      wx.showToast({
-        title: '获取授权失败，请重试',
-        icon: 'none',
-        duration: 2000
-      })
-      return
-    }
-
     // 防抖
     if (this.data.isLoading) {
       console.log('⚠️ 正在登录中，忽略重复点击')
       return
     }
 
-    this.setData({ isLoading: true })
+    // 检查授权结果
+    let userInfo = e.detail.userInfo
+    
+    if (!userInfo) {
+      console.log('⚠️ 用户拒绝授权或未获取到用户信息')
+      console.log('errMsg:', e.detail.errMsg)
+      
+      // 如果用户拒绝授权，询问是否使用游客模式
+      const useGuestMode = await this.promptGuestMode()
+      if (useGuestMode) {
+        userInfo = this.createEnhancedGuestUser()
+      } else {
+        wx.showToast({
+          title: '已取消登录',
+          icon: 'none',
+          duration: 2000
+        })
+        this.setData({ isLoading: false })
+        return
+      }
+    }
 
     try {
-      console.log('✅ 获取到用户信息:', e.detail.userInfo)
+      console.log('✅ 获取到用户信息:', userInfo)
+      console.log('📞 正在调用 wx.login 获取 code...')
 
-      // 调用 wx.login 获取 code
-      const loginRes = await new Promise((resolve, reject) => {
-        wx.login({
-          success: resolve,
-          fail: reject
-        })
-      })
-
+      // 在获取到用户信息后调用 wx.login 获取 code
+      const loginRes = await this.getWxLoginCode()
       console.log('✅ wx.login 成功，code:', loginRes.code)
 
-      // 构建用户数据
-      const timestamp = Date.now()
-      const userInfo = e.detail.userInfo
-      const userData = {
-        id: timestamp,
-        openid: `wx_${loginRes.code.substring(0, 10)}_${timestamp}`,
-        name: userInfo.nickName || '微信用户',
-        avatar: userInfo.avatarUrl || 'https://thirdwx.qlogo.cn/mmopen/vi_32/Q0j4TwGTfTLL0FKx4ciche8Pia1W2ib3OQTmN2ib0C7EibnGCuEbHAsSEQMlcOWXx0iaGn70kxOv9icVhLLaAfAUz5iajw/132',
-        gender: userInfo.gender || 0,
-        city: userInfo.city || '',
-        province: userInfo.province || '',
-        country: userInfo.country || '',
-        loginType: 'wechat',
-        loginTime: timestamp,
-        token: Auth.generateToken(timestamp)
-      }
-
-      console.log('📦 构建的用户数据:', userData)
-
-      // 尝试保存到数据库（可选）
-      try {
-        const { error } = await supabase
-          .from('users')
-          .upsert({
-            openid: userData.openid,
-            name: userData.name,
-            avatar: userData.avatar,
-            gender: userData.gender,
-            city: userData.city,
-            province: userData.province,
-            country: userData.country,
-            login_type: 'wechat',
-            last_login_time: new Date().toISOString()
-          }, {
-            onConflict: 'openid'
-          })
-
-        if (error) {
-          console.warn('⚠️ 保存用户信息到数据库失败:', error.message)
-        } else {
-          console.log('✅ 用户信息已保存到数据库')
-        }
-      } catch (dbError) {
-        console.warn('⚠️ 数据库操作异常:', dbError)
-      }
-
-      // 保存登录状态到本地
-      Auth.saveUserLogin(userData, true)
-
-      // 登录成功提示
-      wx.showToast({
-        title: '登录成功',
-        icon: 'success',
-        duration: 1500
-      })
-
-      console.log('✅ 微信登录成功，即将跳转首页')
-
-      // 延迟跳转到首页
-      setTimeout(() => {
-        this.redirectToHome()
-      }, 1500)
-
+      // 使用新获取的 code 和 userInfo 完成登录
+      await this.completeWechatLogin(loginRes.code, userInfo)
+      
     } catch (error) {
-      console.error('❌ 微信登录失败:', error)
-      
-      let errorMsg = '微信登录失败'
-      if (error.errMsg && error.errMsg.includes('login:fail')) {
-        errorMsg = '微信登录失败，请检查网络'
-      }
-      
+      console.error('❌ 微信登录处理失败:', error)
       wx.showToast({
-        title: errorMsg,
+        title: '登录失败，请重试',
         icon: 'none',
         duration: 2000
       })
     } finally {
       this.setData({ isLoading: false })
+    }
+  },
+
+  // 获取微信登录码
+  getWxLoginCode() {
+    return new Promise((resolve, reject) => {
+      wx.login({
+        success: resolve,
+        fail: reject,
+        timeout: 10000
+      })
+    })
+  },
+
+  // 提示用户是否使用游客模式
+  promptGuestMode() {
+    return new Promise((resolve) => {
+      wx.showModal({
+        title: '授权提示',
+        content: '未获取到您的微信信息，是否使用游客模式继续登录？',
+        confirmText: '继续登录',
+        cancelText: '重新授权',
+        success: (res) => {
+          if (res.confirm) {
+            console.log('✅ 用户选择游客模式')
+            resolve(true)
+          } else {
+            console.log('❌ 用户选择重新授权')
+            resolve(false)
+          }
+        },
+        fail: () => resolve(false)
+      })
+    })
+  },
+
+  // 创建增强的游客用户信息
+  createEnhancedGuestUser() {
+    const timestamp = Date.now()
+    const randomId = Math.floor(Math.random() * 10000)
+    
+    return {
+      nickName: `微信用户${randomId}`,
+      avatarUrl: 'https://thirdwx.qlogo.cn/mmopen/vi_32/POgEwh4mIHO4nibH0KlMECNjjGxQUl24cLiaEwdBbCHnElQzBf0x9Yc2icJ0Y9nSKhEXQnGHVicHjaNQ6GoAhjibcPA/132',
+      gender: 0,
+      city: '',
+      province: '',
+      country: '',
+      isEnhancedGuest: true, // 标记为增强游客
+      platform: wx.getSystemInfoSync().platform
     }
   },
 
@@ -552,8 +663,8 @@ Page({
 
   // 跳转到首页
   redirectToHome() {
-    wx.switchTab({
-      url: '/pages/index/index'
+    wx.reLaunch({
+      url: '/index/index'
     })
   },
 
@@ -592,5 +703,67 @@ Page({
       showCancel: false,
       confirmText: '知道了'
     })
+  },
+
+  // 🆕 微信登录主方法 - 使用官方推荐流程
+  async handleWechatLoginOfficial() {
+    console.log('=========================================')
+    console.log('🚀 用户点击微信登录按钮（官方流程）')
+    console.log('当前环境：', wx.getSystemInfoSync().platform)
+    console.log('当前时间:', new Date().toLocaleString())
+    console.log('=========================================')
+    
+    // 防抖处理
+    if (this.data.isLoading) {
+      console.log('⚠️ 正在登录中，忽略重复点击')
+      return
+    }
+
+    this.setData({ isLoading: true })
+
+    try {
+      // 使用新的微信登录服务
+      console.log('📞 开始调用 wechatLogin.login()')
+      const loginResult = await wechatLogin.login()
+      
+      if (loginResult.success) {
+        console.log('✅ 微信登录成功!')
+        console.log('   - token:', loginResult.token)
+        console.log('   - userInfo:', loginResult.userInfo)
+        
+        // 登录成功提示
+        wx.showToast({
+          title: '登录成功',
+          icon: 'success',
+          duration: 1500
+        })
+
+        // 延迟跳转到首页
+        setTimeout(() => {
+          this.redirectToHome()
+        }, 1500)
+        
+      } else {
+        throw new Error(loginResult.error || '登录失败')
+      }
+      
+    } catch (error) {
+      console.error('❌ 微信登录失败:', error)
+      
+      let errorMsg = '登录失败，请重试'
+      if (error.message.includes('服务器')) {
+        errorMsg = '服务器繁忙，请稍后重试'
+      } else if (error.message.includes('网络')) {
+        errorMsg = '网络连接失败，请检查网络'
+      }
+      
+      wx.showToast({
+        title: errorMsg,
+        icon: 'none',
+        duration: 2000
+      })
+    } finally {
+      this.setData({ isLoading: false })
+    }
   }
 })
