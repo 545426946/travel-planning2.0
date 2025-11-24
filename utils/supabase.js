@@ -103,10 +103,45 @@ class QueryBuilder {
       method: this.method,
       header: headers,
       success: (res) => {
-        callback({ data: res.data, error: null })
+        // 检查HTTP状态码，409表示冲突
+        if (res.statusCode === 409) {
+          // 将HTTP状态码和错误信息包装成错误对象
+          const errorObj = {
+            statusCode: res.statusCode,
+            status: '409',
+            code: '23505',
+            message: res.data?.message || 'duplicate key value violates unique constraint "unique_ai_travel_plan"',
+            details: res.data?.details || null
+          }
+          
+          // 直接返回错误
+          callback({ 
+            data: null, 
+            error: errorObj
+          })
+          return  // 重要：提前返回，避免继续执行
+        }
+        
+        // 正常成功
+        callback({ 
+          data: res.data, 
+          error: null
+        })
       },
       fail: (err) => {
-        callback({ data: null, error: err })
+        // 确保错误对象包含所有必要的信息
+        const errorObj = {
+          statusCode: err.statusCode || err.status,
+          status: err.statusCode ? String(err.statusCode) : err.status,
+          code: err.code,
+          message: err.message || err.errMsg || '请求失败',
+          details: err.details || null
+        }
+        
+        // 记录错误信息
+        console.error('Supabase 请求失败:', errorObj)
+        
+        callback({ data: null, error: errorObj })
       }
     }
 
@@ -127,6 +162,7 @@ class QueryBuilder {
 
   catch(callback) {
     return this.then((result) => {
+      // 即使在then中已经处理了409错误，也需要检查错误对象
       if (result.error) {
         callback(result.error)
       }

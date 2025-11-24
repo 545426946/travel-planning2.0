@@ -30,6 +30,50 @@ const db = {
 
   // 行程相关操作
   travelPlans: {
+    // 处理重复行程的方法
+    async handleDuplicatePlan(userId, planData) {
+      return new Promise((resolve) => {
+        supabase
+          .from('travel_plans')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('title', planData.title)
+          .eq('destination', planData.destination)
+          .eq('start_date', planData.start_date)
+          .eq('end_date', planData.end_date)
+          .eq('travelers_count', planData.travelers_count)
+          .single()
+          .then((existingResult) => {
+            if (existingResult.data) {
+              console.log('找到已存在的行程:', existingResult.data.id)
+              resolve({ data: existingResult.data, error: null, isExisting: true })
+            } else {
+              console.error('查询已存在行程出错:', existingResult.error)
+              // 即使查询出错，也返回一个表示已存在的标记
+              resolve({ 
+                data: { id: 'existing-plan-not-found' }, 
+                error: existingResult.error || { 
+                  code: '23505', 
+                  message: 'duplicate key value violates unique constraint "unique_ai_travel_plan"' 
+                }, 
+                isExisting: true 
+              })
+            }
+          })
+          .catch((findError) => {
+            console.error('查询已存在行程失败:', findError)
+            // 即使查询失败，也返回一个表示已存在的标记
+            resolve({ 
+              data: { id: 'existing-plan-error' }, 
+              error: findError || { 
+                code: '23505', 
+                message: 'duplicate key value violates unique constraint "unique_ai_travel_plan"' 
+              }, 
+              isExisting: true 
+            })
+          })
+      })
+    },
     // 获取用户的行程（自动验证权限）
     getByUserId(userId, status = 'planned', limit = null) {
       // 权限验证：只能查询当前登录用户的数据
@@ -91,43 +135,67 @@ const db = {
         user_id: userId
       }
 
-      return supabase
-        .from('travel_plans')
-        .insert(safePlanData)
-        .select()
-        .then((result) => ({ data: result.data?.[0], error: result.error }))
-        .catch(async (error) => {
-          // 如果是唯一约束冲突，尝试查询已存在的记录
-          if (error && (
-            error.message?.includes('duplicate key') ||
-            error.message?.includes('unique constraint') ||
-            error.code === '23505'
-          )) {
-            console.log('唯一约束冲突，查询已存在的行程')
-            try {
-              // 根据唯一约束字段查询已存在的记录
-              const existingResult = await supabase
-                .from('travel_plans')
-                .select('*')
-                .eq('user_id', userId)
-                .eq('title', planData.title)
-                .eq('destination', planData.destination)
-                .eq('start_date', planData.start_date)
-                .eq('end_date', planData.end_date)
-                .eq('travelers_count', planData.travelers_count)
-                .single()
-              
-              if (existingResult.data) {
-                console.log('找到已存在的行程:', existingResult.data.id)
-                return { data: existingResult.data, error: null, isExisting: true }
+      // 简化的保存操作，依赖调用方预先检查重复
+      return new Promise((resolve) => {
+        supabase
+          .from('travel_plans')
+          .insert(safePlanData)
+          .select()
+          .then((result) => {
+            if (result.error) {
+              // 如果是重复键错误，直接标记为已存在，不再查询
+              if (
+                result.error.code === '23505' ||
+                result.error.status === '409' ||
+                result.error.statusCode === 409 ||
+                (result.error.message && result.error.message.includes('duplicate key')) ||
+                (result.error.message && result.error.message.includes('unique constraint'))
+              ) {
+                console.log('保存遇到重复键错误，标记为已存在')
+                resolve({
+                  data: { id: 'existing-duplicate' },
+                  error: result.error,
+                  isExisting: true
+                })
+                return
               }
-            } catch (findError) {
-              console.error('查询已存在行程失败:', findError)
+              
+              // 其他错误，原样返回
+              console.error('数据库保存失败:', result.error)
+              resolve({ data: null, error: result.error })
+              return
             }
-          }
-          
-          return { data: null, error }
-        })
+            
+            // 成功保存
+            resolve({ 
+              data: result.data?.[0], 
+              error: null 
+            })
+          })
+          .catch((error) => {
+            console.error('数据库操作失败:', error)
+            
+            // 如果是重复键错误，直接标记为已存在
+            if (
+              error.code === '23505' ||
+              error.status === '409' ||
+              error.statusCode === 409 ||
+              (error.message && error.message.includes('duplicate key')) ||
+              (error.message && error.message.includes('unique constraint'))
+            ) {
+              console.log('捕获到重复键错误，标记为已存在')
+              resolve({
+                data: { id: 'existing-duplicate' },
+                error: error,
+                isExisting: true
+              })
+              return
+            }
+            
+            // 其他错误
+            resolve({ data: null, error })
+          })
+      })
     },
 
     // 更新行程（自动验证权限）
