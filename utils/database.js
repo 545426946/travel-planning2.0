@@ -96,7 +96,38 @@ const db = {
         .insert(safePlanData)
         .select()
         .then((result) => ({ data: result.data?.[0], error: result.error }))
-        .catch(error => ({ data: null, error }))
+        .catch(async (error) => {
+          // 如果是唯一约束冲突，尝试查询已存在的记录
+          if (error && (
+            error.message?.includes('duplicate key') ||
+            error.message?.includes('unique constraint') ||
+            error.code === '23505'
+          )) {
+            console.log('唯一约束冲突，查询已存在的行程')
+            try {
+              // 根据唯一约束字段查询已存在的记录
+              const existingResult = await supabase
+                .from('travel_plans')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('title', planData.title)
+                .eq('destination', planData.destination)
+                .eq('start_date', planData.start_date)
+                .eq('end_date', planData.end_date)
+                .eq('travelers_count', planData.travelers_count)
+                .single()
+              
+              if (existingResult.data) {
+                console.log('找到已存在的行程:', existingResult.data.id)
+                return { data: existingResult.data, error: null, isExisting: true }
+              }
+            } catch (findError) {
+              console.error('查询已存在行程失败:', findError)
+            }
+          }
+          
+          return { data: null, error }
+        })
     },
 
     // 更新行程（自动验证权限）
