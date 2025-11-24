@@ -138,9 +138,39 @@ class AIIntegration {
         error.message.includes('unique') || 
         error.message.includes('duplicate key') ||
         error.message.includes('duplicate') ||
-        error.message.includes('违反唯一约束')
+        error.message.includes('违反唯一约束') ||
+        error.message.includes('23505')  // PostgreSQL唯一约束错误码
       )) {
-        console.log('触发唯一约束，阻止重复保存')
+        console.log('触发唯一约束，查找已存在的行程')
+        
+        // 查找已存在的相同行程
+        try {
+          const existingResult = await db.travelPlans.getByUserId(userId, 'planned', 10)
+          if (existingResult.data && existingResult.data.length > 0) {
+            const existingPlan = existingResult.data.find(plan => {
+              const sameTitle = plan.title === planData.title
+              const sameDestination = plan.destination === planData.destination
+              const sameStartDate = plan.start_date === planData.startDate
+              const sameEndDate = plan.end_date === planData.endDate
+              const sameTravelers = plan.travelers_count === planData.travelersCount
+              
+              return sameTitle && sameDestination && sameStartDate && sameEndDate && sameTravelers
+            })
+            
+            if (existingPlan) {
+              console.log('找到已存在的行程:', existingPlan.id)
+              return { 
+                success: true, 
+                data: existingPlan,  // 返回已存在的行程数据
+                message: '行程已存在',
+                isExisting: true
+              }
+            }
+          }
+        } catch (findError) {
+          console.error('查找已存在行程失败:', findError)
+        }
+        
         return { 
           success: false, 
           error: '该行程已存在，请勿重复保存',

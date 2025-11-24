@@ -416,11 +416,19 @@ Page({
       })
 
       if (result.success) {
-        console.log('行程保存成功，ID:', result.data?.id)
+        // 处理两种情况：新保存的行程 或 已存在的行程
+        const planId = result.data?.id
+        const isExisting = result.isExisting || false
+        
+        console.log('行程保存成功，ID:', planId, '是否已存在:', isExisting)
+        
+        // 根据情况显示不同的提示
+        const toastTitle = isExisting ? '行程已存在' : '行程已保存'
+        const toastIcon = isExisting ? 'none' : 'success'
         
         wx.showToast({
-          title: '行程已保存',
-          icon: 'success',
+          title: toastTitle,
+          icon: toastIcon,
           duration: 1500
         })
 
