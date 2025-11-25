@@ -19,7 +19,29 @@
     </button>
   </view>
 
-
+  <!-- 筛选栏 -->
+  <view class="filter-bar">
+    <view class="filter-item {{filterStatus === 'all' ? 'active' : ''}}" 
+          bindtap="changeFilter" 
+          data-status="all">
+      <text>全部</text>
+    </view>
+    <view class="filter-item {{filterStatus === 'planned' ? 'active' : ''}}" 
+          bindtap="changeFilter" 
+          data-status="planned">
+      <text>计划中</text>
+    </view>
+    <view class="filter-item {{filterStatus === 'ongoing' ? 'active' : ''}}" 
+          bindtap="changeFilter" 
+          data-status="ongoing">
+      <text>进行中</text>
+    </view>
+    <view class="filter-item {{filterStatus === 'completed' ? 'active' : ''}}" 
+          bindtap="changeFilter" 
+          data-status="completed">
+      <text>已完成</text>
+    </view>
+  </view>
 
   <!-- 我的行程列表 -->
   <view class="plans-section">

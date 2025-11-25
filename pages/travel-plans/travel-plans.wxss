@@ -61,7 +61,31 @@
   font-size: 36rpx;
 }
 
+/* 筛选栏 */
+.filter-bar {
+  display: flex;
+  gap: 20rpx;
+  padding: 0 40rpx 30rpx;
+}
 
+.filter-item {
+  flex: 1;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 32rpx;
+  font-size: 26rpx;
+  color: white;
+  transition: all 0.3s;
+}
+
+.filter-item.active {
+  background: white;
+  color: #667eea;
+  font-weight: 600;
+}
 
 /* 行程列表区域 */
 .plans-section {

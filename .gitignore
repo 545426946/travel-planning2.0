@@ -29,6 +29,18 @@ Thumbs.db
 # WeChat miniprogram
 project.private.config.json
 
+# CodeBuddy
+.codebuddy/
+
+# Test files
+test-*.js
+*test*.js
+
+# Deployment scripts
+*.ps1
+*.bat
+deploy-*
+
 # Logs
 logs
 *.log
