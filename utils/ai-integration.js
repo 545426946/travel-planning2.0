@@ -62,74 +62,7 @@ class AIIntegration {
 
       console.log('开始保存行程数据:', planData.title)
 
-      // 🔒 强化防重复检查：先查询是否已存在完全相同的行程
-      try {
-        console.log('查询已存在的相同行程...')
-        
-        // 直接查询数据库中是否存在相同的行程
-        const existingResult = await supabase
-          .from('travel_plans')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('title', planData.title)
-          .eq('destination', planData.destination)
-          .eq('start_date', planData.startDate)
-          .eq('end_date', planData.endDate)
-          .eq('travelers_count', planData.travelersCount)
-          .single()
-        
-        if (existingResult.data) {
-          console.log('发现已存在的行程，直接返回:', existingResult.data.id, existingResult.data.title)
-          return { 
-            success: true, 
-            data: existingResult.data,
-            isExisting: true,
-            message: '行程已存在'
-          }
-        }
-      } catch (checkError) {
-        // 查询出错可能是正常的（没有找到记录），继续保存
-        console.log('查询已存在行程出错，可能是正常情况:', checkError.message)
-      }
-
-      // 🔒 检查最近5分钟内是否有相同标题的行程（防止重复提交）
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
-      
-      try {
-        const recentPlansResult = await supabase
-          .from('travel_plans')
-          .select('*')
-          .eq('user_id', userId)
-          .gte('created_at', fiveMinutesAgo)
-          .like('title', `%${planData.title.substring(0, 20)}%`) // 使用模糊匹配
-          .limit(5)
-        
-        if (recentPlansResult.data && recentPlansResult.data.length > 0) {
-          const duplicatePlan = recentPlansResult.data.find(plan => {
-            // 检查是否有高度相似的行程
-            const titleSimilar = plan.title === planData.title
-            const sameDestination = plan.destination === planData.destination
-            const sameDates = plan.start_date === planData.startDate && plan.end_date === planData.endDate
-            
-            return titleSimilar && sameDestination && sameDates
-          })
-          
-          if (duplicatePlan) {
-            console.log('发现5分钟内重复行程，直接返回:', duplicatePlan.id, duplicatePlan.title)
-            return { 
-              success: true, 
-              data: duplicatePlan,
-              isExisting: true,
-              message: '行程已存在'
-            }
-          }
-        }
-      } catch (checkError) {
-        console.log('重复检查失败，继续保存:', checkError)
-      }
-
-      // 执行保存操作
-      console.log('执行保存操作...')
+      // 保存到数据库
       const result = await db.travelPlans.create({
         user_id: userId,
         title: planData.title,
@@ -151,34 +84,16 @@ class AIIntegration {
         special_requirements: planData.specialRequirements
       })
       
-      console.log('数据库保存结果:', result)
-      
-      // 检查是否已经标记为已存在
-      if (result.isExisting) {
-        console.log('行程已存在，返回已存在的记录:', result.data)
-        return { 
-          success: true, 
-          data: result.data,
-          isExisting: true,
-          message: '行程已存在'
-        }
-      }
-      
-      // 如果有错误，但不是重复键错误，抛出异常
-      if (result.error && 
-          result.error.code !== '23505' && 
-          result.error.status !== '409' &&
-          result.error.statusCode !== 409) {
-        console.log('保存行程时发生错误:', result.error)
+      if (result.error) {
         throw new Error(result.error.message || '保存失败')
       }
 
-      // 无论是否有数据，都返回成功
+      console.log('行程保存成功:', result.data)
+      
       return { 
         success: true, 
-        data: result.data || { id: 'unknown' },
-        isExisting: result.isExisting || false,
-        message: result.isExisting ? '行程已存在' : '行程保存成功'
+        data: result.data,
+        message: '行程保存成功'
       }
     } catch (error) {
       console.error('保存行程失败:', error)

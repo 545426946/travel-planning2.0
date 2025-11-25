@@ -36,17 +36,11 @@ Page({
     ],
     
     // 加载状态
-    isLoading: false,
-    
-    // 保存状态 - 防止重复保存
-    isSaving: false,
-    planSavedFlag: false  // 🔒 防重复保存标记
+    isLoading: false
   },
 
   onLoad(options) {
     console.log('AI规划页面加载')
-    // 🔒 初始化保存锁
-    this.isSavingLocked = false
   },
 
   // 目的地输入
@@ -223,10 +217,6 @@ Page({
       return
     }
 
-    // 清除之前的数据，防止重复
-    this.currentPlanData = null
-    this.setData({ isSaving: false })
-
     const userId = Auth.getCurrentUserId()
 
     this.setData({ isLoading: true })
@@ -295,12 +285,6 @@ Page({
       formData: formData
     }
 
-    // 🔒 强化保存状态管理
-    this.setData({ 
-      isSaving: false,
-      planSavedFlag: false  // 新增：标记是否已保存
-    })
-
     wx.showModal({
       title: '🎉 AI规划完成',
       content: content + '\n\n您是否要保存这个行程规划？',
@@ -308,15 +292,6 @@ Page({
       cancelText: '重新生成',
       success: (res) => {
         if (res.confirm) {
-          // 🔒 检查是否已经保存过
-          if (this.data.planSavedFlag) {
-            wx.showToast({
-              title: '行程已保存，请勿重复操作',
-              icon: 'none'
-            })
-            return
-          }
-          
           // 用户选择保存
           this.saveCurrentPlan()
         } else {
@@ -328,13 +303,7 @@ Page({
             cancelText: '返回',
             success: (modalRes) => {
               if (modalRes.confirm) {
-                // 重新生成 - 清除之前的数据，防止重复
-                this.currentPlanData = null
-                this.setData({ 
-                  isSaving: false,
-                  planSavedFlag: false 
-                })
-                // 直接重新调用提交
+                // 重新生成 - 直接重新调用提交
                 this.onSubmit()
               } else {
                 // 返回上一页
@@ -350,7 +319,7 @@ Page({
   // 显示规划结果（原有方法保留作为备用）
   showPlanResult(aiResponse, planData) {
     const content = aiResponse.length > 500 
-      ? aiResponse.substring(0, 500) + '...完整行程已保存，请在"我的行程"中查看' 
+      ? aiResponse.substring(0, 500) + '...\n\n完整行程已保存，请在"我的行程"中查看' 
       : aiResponse
 
     wx.showModal({
@@ -371,35 +340,21 @@ Page({
   async saveCurrentPlan() {
     if (!this.currentPlanData) {
       wx.showToast({
-        title: '没有可保存的行程',
+        title: '数据丢失',
         icon: 'none'
       })
       return
     }
 
-    // 🔒 多重防止重复保存检查
-    if (this.data.isSaving || this.data.planSavedFlag || this.isSavingLocked) {
-      console.log('重复保存尝试被阻止:', {
-        isSaving: this.data.isSaving,
-        planSavedFlag: this.data.planSavedFlag,
-        isSavingLocked: this.isSavingLocked
-      })
-      wx.showToast({
-        title: '正在保存中或已保存，请勿重复操作',
-        icon: 'none'
-      })
+    // 防止重复保存
+    if (this.isSaving) {
+      console.log('正在保存中，跳过重复调用')
       return
     }
-    
-    // 🔒 设置实例锁（防止异步并发）
-    this.isSavingLocked = true
-    
-    this.setData({ 
-      isSaving: true,
-      planSavedFlag: true  // 立即标记为已保存
-    })
-    
+
+    this.isSaving = true
     const userId = Auth.getCurrentUserId()
+    
     this.setData({ isLoading: true })
 
     try {
@@ -407,52 +362,38 @@ Page({
       
       // 调用保存服务
       const result = await aiIntegration.savePlanOnly(userId, this.currentPlanData.planData)
-      
-      console.log('保存行程结果:', result)
 
-      this.setData({ 
-        isLoading: false,
-        isSaving: false 
-      })
+      this.setData({ isLoading: false })
+      this.isSaving = false
 
       if (result.success) {
-        // 处理两种情况：新保存的行程 或 已存在的行程
-        const planId = result.data?.id
-        const isExisting = result.isExisting || false
-        
-        console.log('行程保存成功，ID:', planId, '是否已存在:', isExisting)
-        
-        // 根据情况显示不同的提示
-        const toastTitle = isExisting ? '行程已存在' : '行程已保存'
-        const toastIcon = isExisting ? 'none' : 'success'
+        console.log('行程保存成功，ID:', result.data?.id)
         
         wx.showToast({
-          title: toastTitle,
-          icon: toastIcon,
+          title: '保存成功',
+          icon: 'success',
           duration: 1500
         })
 
         // 清除当前数据，防止重复保存
         this.currentPlanData = null
 
-        // 1.5秒后返回行程列表页
+        // 延迟返回并刷新列表
         setTimeout(() => {
-          // 🔒 解除保存锁
-          this.isSavingLocked = false
-          wx.switchTab({
-            url: '/pages/travel-plans/travel-plans'
+          wx.navigateBack({
+            success: () => {
+              // 通知上一个页面刷新数据
+              const pages = getCurrentPages()
+              const prevPage = pages[pages.length - 2]
+              if (prevPage && prevPage.loadTravelPlans) {
+                console.log('通知上一页刷新行程列表')
+                prevPage.loadTravelPlans()
+              }
+            }
           })
         }, 1500)
       } else {
-        // 保存失败时重置保存状态
-        this.setData({ 
-          isSaving: false,
-          planSavedFlag: false 
-        })
-        
-        // 🔒 解除保存锁
-        this.isSavingLocked = false
-        
+        this.isSaving = false
         wx.showModal({
           title: '保存失败',
           content: result.error || '保存行程时出现错误，请重试',
@@ -461,22 +402,12 @@ Page({
         })
       }
     } catch (error) {
-      // 出错时重置保存状态
-      this.setData({ 
-        isLoading: false,
-        isSaving: false,
-        planSavedFlag: false 
-      })
-      
-      // 🔒 解除保存锁
-      this.isSavingLocked = false
-      
+      this.setData({ isLoading: false })
+      this.isSaving = false
       console.error('保存行程失败:', error)
-      wx.showModal({
+      wx.showToast({
         title: '保存失败',
-        content: '保存行程时出现错误，请重试',
-        showCancel: false,
-        confirmText: '知道了'
+        icon: 'none'
       })
     }
   }

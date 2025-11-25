@@ -179,7 +179,7 @@ Page({
         }
 
         // 转换数据格式
-        const destinations = data.map(item => ({
+        const destinations = (Array.isArray(data) ? data : []).map(item => ({
           name: item.name,
           description: item.description || '',
           image: item.image_url,
@@ -229,7 +229,7 @@ Page({
         }
 
         // 转换数据格式
-        const travelPlans = data.map(item => ({
+        const travelPlans = (Array.isArray(data) ? data : []).map(item => ({
           id: item.id,
           title: item.title,
           duration: this.calculateDuration(item.start_date, item.end_date),
@@ -242,7 +242,7 @@ Page({
 
         this.setData({ 
           myTravelPlans: travelPlans,
-          aiRoutes: data.slice(0, 2).map(item => ({
+          aiRoutes: (Array.isArray(data) ? data.slice(0, 2) : []).map(item => ({
             id: item.id,
             name: item.title,
             desc: item.description || item.destination,

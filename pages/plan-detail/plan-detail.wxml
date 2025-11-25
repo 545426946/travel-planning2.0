@@ -1,16 +1,7 @@
 <view class="container">
   <!-- 加载状态 -->
   <view wx:if="{{loading}}" class="loading-container">
-    <view class="loading-spinner"></view>
-    <text class="loading-text">正在加载行程详情...</text>
-  </view>
-
-  <!-- 错误提示 -->
-  <view wx:if="{{showError}}" class="error-container">
-    <view class="error-icon">⚠️</view>
-    <text class="error-title">{{errorMessage}}</text>
-    <text class="error-detail" wx:if="{{errorDetail}}">{{errorDetail}}</text>
-    <button class="error-retry-btn" bindtap="loadPlanDetail">重新加载</button>
+    <text>加载中...</text>
   </view>
 
   <!-- 行程详情 -->

@@ -8,86 +8,11 @@
 /* 加载状态 */
 .loading-container {
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  padding: 80rpx 40rpx;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 16rpx;
-  margin: 20rpx;
-}
-
-.loading-spinner {
-  width: 60rpx;
-  height: 60rpx;
-  border: 4rpx solid #f0f0f0;
-  border-top: 4rpx solid #007aff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 20rpx;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.loading-text {
-  font-size: 28rpx;
-  color: #666;
-  text-align: center;
-}
-
-/* 错误提示 */
-.error-container {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 60rpx 40rpx;
-  background: linear-gradient(135deg, #fff5f5 0%, #ffecec 100%);
-  border-radius: 16rpx;
-  margin: 20rpx;
-  border: 2rpx solid #ffcccc;
-}
-
-.error-icon {
-  font-size: 80rpx;
-  margin-bottom: 20rpx;
-  color: #ff6b6b;
-}
-
-.error-title {
-  font-size: 32rpx;
-  color: #d63031;
-  font-weight: 600;
-  margin-bottom: 16rpx;
-  text-align: center;
-}
-
-.error-detail {
-  font-size: 26rpx;
-  color: #666;
-  text-align: center;
-  margin-bottom: 30rpx;
-  line-height: 1.5;
-}
-
-.error-retry-btn {
-  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-  color: white;
-  border: none;
-  padding: 20rpx 40rpx;
-  border-radius: 50rpx;
+  height: 100vh;
   font-size: 28rpx;
-  font-weight: 500;
-  box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.3);
-  transition: all 0.3s ease;
-}
-
-.error-retry-btn:hover {
-  transform: translateY(-2rpx);
-  box-shadow: 0 6rpx 16rpx rgba(255, 107, 107, 0.4);
+  color: #999;
 }
 
 /* 返回按钮 */

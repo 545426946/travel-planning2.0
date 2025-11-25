@@ -6,6 +6,8 @@ Page({
   data: {
     // 行程列表
     travelPlans: [],
+    // 筛选条件
+    filterStatus: 'all', // all, planned, ongoing, completed
     // 加载状态
     loading: false,
     // 防重复加载标记
@@ -89,7 +91,10 @@ Page({
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
 
-
+      // 根据筛选条件过滤
+      if (this.data.filterStatus !== 'all') {
+        query = query.eq('status', this.data.filterStatus)
+      }
 
       const result = await query
       const { data, error } = result
@@ -100,25 +105,36 @@ Page({
 
       console.log('从数据库加载的行程数据:', data?.length || 0, '条')
 
-      // 按创建时间排序（最新的在前）
-      data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      // 只按ID去重（防止数据库中确实有重复ID的记录）
+      const uniqueData = data.filter((item, index, self) => 
+        index === self.findIndex(t => t.id === item.id)
+      )
 
-      // 去重处理：根据ID去重，保留最新的记录
-      const uniqueData = []
-      const seenIds = new Set()
-      
-      for (const item of data) {
-        if (!seenIds.has(item.id)) {
-          seenIds.add(item.id)
-          uniqueData.push(item)
-        } else {
-          console.log('发现重复ID的行程:', item.id, item.title)
+      console.log('ID去重后的行程数据:', uniqueData?.length || 0, '条')
+
+      // 记录相同标题的行程（仅用于日志，不删除）
+      const titleGroups = new Map()
+      uniqueData.forEach(item => {
+        const title = item.title
+        if (!titleGroups.has(title)) {
+          titleGroups.set(title, [])
         }
-      }
+        titleGroups.get(title).push(item)
+      })
 
+      // 仅记录重复标题的日志，不做删除
+      titleGroups.forEach((items, title) => {
+        if (items.length > 1) {
+          console.log(`发现相同标题 "${title}" 的行程 ${items.length} 个，将全部显示`)
+          items.forEach(item => {
+            console.log(`  - ID: ${item.id}, 创建时间: ${item.created_at}`)
+          })
+        }
+      })
+
+      // 使用所有去重后的数据（不再按标题删除）
       const finalData = uniqueData
 
-      console.log('去重后的行程数据:', finalData?.length || 0, '条')
       console.log('最终显示的行程数据:', finalData?.length || 0, '条')
 
       const travelPlans = finalData.map(item => ({
@@ -174,7 +190,12 @@ Page({
     return `https://picsum.photos/seed/${destination || id}/800/400.jpg`
   },
 
-
+  // 切换筛选状态
+  changeFilter(e) {
+    const status = e.currentTarget.dataset.status
+    this.setData({ filterStatus: status })
+    this.loadTravelPlans()
+  },
 
   // 查看行程详情
   viewPlanDetail(e) {

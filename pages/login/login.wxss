@@ -289,9 +289,26 @@ page {
   box-shadow: 0 10rpx 25rpx rgba(7, 193, 96, 0.3);
 }
 
+.wechat-btn.primary {
+  background: #07c160;
+  font-weight: bold;
+  font-size: 32rpx;
+}
+
 .wechat-btn:active {
   transform: translateY(2rpx);
   box-shadow: 0 5rpx 15rpx rgba(7, 193, 96, 0.3);
+}
+
+.wechat-btn.secondary {
+  background: rgba(7, 193, 96, 0.7);
+  margin-top: 20rpx;
+  font-size: 28rpx;
+}
+
+.wechat-btn.secondary:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 5rpx 15rpx rgba(7, 193, 96, 0.2);
 }
 
 .wechat-logo {
