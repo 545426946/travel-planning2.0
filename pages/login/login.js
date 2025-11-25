@@ -1,7 +1,7 @@
 // pages/login/login.js
 const supabase = require('../../utils/supabase').supabase
 const Auth = require('../../utils/auth').Auth
-const { wechatLogin } = require('../../utils/wechat-login').wechatLogin
+const { wechatLogin } = require('../../utils/wechat-login')
 
 Page({
   data: {

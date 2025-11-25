@@ -12,9 +12,9 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
  */
 class WechatLogin {
   constructor() {
-    // 微信小程序配置（需要从后台获取）
-    this.appId = 'your_mini_program_appid' // 替换为实际的 AppID
-    this.serverUrl = 'your_server_url' // 替换为实际的服务器地址
+    // 微信小程序配置
+    this.appId = 'wxb9ca37c30f43d5b8' // 从 project.config.json 获取的 AppID
+    this.serverUrl = supabaseUrl // 使用 Supabase URL
   }
 
   /**
@@ -81,7 +81,12 @@ class WechatLogin {
     try {
       console.log('📡 发送 code 到 Supabase Edge Function:', code)
       
-      // 调用 Supabase Edge Function
+      // 优先尝试本地处理（避免 Edge Function 配置问题）
+      console.log('🔄 优先使用本地处理模式')
+      return await this.localWechatLoginFallback(code)
+      
+      // 如果需要使用 Edge Function，取消下面的注释
+      /*
       const response = await this.callSupabaseFunction('wechat-login', { code })
       
       if (response.success) {
@@ -89,13 +94,11 @@ class WechatLogin {
       } else {
         throw new Error(response.message || '服务器处理失败')
       }
+      */
       
     } catch (error) {
-      console.error('❌ 调用 Supabase Function 失败:', error)
-      
-      // 如果 Edge Function 不可用，使用本地 fallback
-      console.log('🔄 Edge Function 不可用，使用本地处理')
-      return await this.localWechatLoginFallback(code)
+      console.error('❌ 调用失败:', error)
+      throw error
     }
   }
 
