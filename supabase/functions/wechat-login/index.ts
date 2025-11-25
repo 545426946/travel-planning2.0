@@ -1,22 +1,9 @@
-// supabase/functions/wechat-login/index.ts
-// 微信登录 Edge Function - 处理小程序端的登录请求
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-
-// 微信小程序配置
-const WECHAT_CONFIG = {
-  appId: Deno.env.get('WECHAT_APP_ID') || 'your_mini_program_appid',
-  appSecret: Deno.env.get('WECHAT_APP_SECRET') || 'your_mini_program_appsecret',
-  grantType: 'authorization_code',
-  apiDomain: 'https://api.weixin.qq.com'
-}
-
-// CORS 头部
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req) => {
@@ -26,274 +13,188 @@ serve(async (req) => {
   }
 
   try {
-    // 只接受 POST 请求
-    if (req.method !== 'POST') {
+    // 从环境变量获取配置
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const wechatAppId = Deno.env.get('WECHAT_APP_ID')
+    const wechatAppSecret = Deno.env.get('WECHAT_APP_SECRET')
+
+    // 检查必需的环境变量
+    if (!supabaseUrl || !supabaseServiceKey || !wechatAppId || !wechatAppSecret) {
+      console.error('缺少必需的环境变量')
       return new Response(
-        JSON.stringify({ success: false, message: 'Method not allowed' }),
-        { 
-          status: 405, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        JSON.stringify({
+          success: false,
+          error: '服务器配置错误'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
         }
       )
     }
+
+    console.log('环境变量检查: ✅ 所有必需变量已设置')
+
+    // 创建 Supabase 客户端
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // 解析请求体
-    const { code } = await req.json()
+    const { code, userInfo } = await req.json()
     
     if (!code) {
-      return new Response(
-        JSON.stringify({ success: false, message: '缺少登录凭证 code' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
+      throw new Error('缺少微信登录凭证 code')
     }
 
-    console.log('📡 收到微信登录请求，code:', code)
+    console.log('收到微信登录 code:', code.substring(0, 10) + '...')
 
-    // 1. 向微信服务器请求换取 OpenID 和 session_key
-    const wechatResponse = await getWechatUserInfo(code)
+    // 调用微信接口获取 session_key 和 openid
+    const wxApiUrl = `https://api.weixin.qq.com/sns/jscode2session?appid=${wechatAppId}&secret=${wechatAppSecret}&js_code=${code}&grant_type=authorization_code`
     
-    if (!wechatResponse.success) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: wechatResponse.message || '微信登录失败' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
+    console.log('调用微信 API...')
+    
+    const wxResponse = await fetch(wxApiUrl)
+    const wxData = await wxResponse.json()
+
+    console.log('微信 API 响应:', {
+      openid: wxData.openid ? '✅' : '❌',
+      session_key: wxData.session_key ? '✅' : '❌',
+      errcode: wxData.errcode || '无',
+      errmsg: wxData.errmsg || '无'
+    })
+
+    if (wxData.errcode) {
+      console.error('微信认证失败:', {
+        errcode: wxData.errcode,
+        errmsg: wxData.errmsg,
+        appid: wechatAppId
+      })
+      throw new Error(`微信认证失败: ${wxData.errmsg} (${wxData.errcode})`)
     }
 
-    const { openid, session_key, unionid } = wechatResponse.data
-    console.log('✅ 微信服务器返回:', { openid, session_key: '***' })
+    const { openid, session_key } = wxData
 
-    // 2. 初始化 Supabase 客户端
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!
-    )
+    if (!openid) {
+      throw new Error('微信认证失败：无法获取用户标识')
+    }
 
-    //3. 查找或创建用户
-    let userInfo
+    // 生成自定义 token
+    const timestamp = Date.now()
+    const randomPart = Math.random().toString(36).substring(2, 9)
+    const token = `wt_${timestamp}_${openid.substring(0, 8)}_${randomPart}`
+
+    // 查询或创建用户
     const { data: existingUser, error: fetchError } = await supabase
-      .from('users')
+      .from('app_users')
       .select('*')
       .eq('openid', openid)
       .single()
 
     if (fetchError && fetchError.code !== 'PGRST116') {
-      console.error('❌ 查询用户失败:', fetchError)
-      throw new Error('数据库查询失败')
+      console.error('查询用户失败:', fetchError)
     }
 
+    let userInfo
+    
     if (existingUser) {
-      // 更新现有用户
-      userInfo = {
-        ...existingUser,
-        last_login_time: new Date().toISOString(),
-        login_count: (existingUser.login_count || 0) + 1
-      }
-      
+      // 更新最后登录时间
       const { error: updateError } = await supabase
-        .from('users')
+        .from('app_users')
         .update({
-          last_login_time: userInfo.last_login_time,
-          login_count: userInfo.login_count
+          last_login_time: new Date().toISOString(),
+          session_key: session_key
         })
         .eq('openid', openid)
 
       if (updateError) {
-        console.error('❌ 更新用户失败:', updateError)
-        throw new Error('数据库更新失败')
+        console.error('更新用户登录时间失败:', updateError)
       }
-      
-      console.log('🔄 更新现有用户登录信息')
-    } else {
-      // 创建新用户
+
       userInfo = {
-        openid,
-        name: '微信用户',
-        avatar: 'https://thirdwx.qlogo.cn/mmopen/vi_32/POgEwh4mIHO4nibH0KlMECNjjGxQUl24cLiaEwdBbCHnElQzBf0x9Yc2icJ0Y9nSKhEXQnGHVicHjaNQ6GoAhjibcPA/132',
-        gender: 0,
-        city: '',
-        province: '',
-        country: '',
-        login_type: 'wechat',
-        has_real_info: false,
-        created_at: new Date().toISOString(),
-        last_login_time: new Date().toISOString(),
-        login_count: 1
+        id: existingUser.id,
+        openid: existingUser.openid,
+        name: existingUser.name,
+        avatar: existingUser.avatar,
+        gender: existingUser.gender,
+        city: existingUser.city,
+        province: existingUser.province,
+        country: existingUser.country,
+        loginType: 'wechat',
+        hasRealInfo: existingUser.has_real_info
       }
-      
-      const { data: newUser, error: insertError } = await supabase
-        .from('users')
-        .insert(userInfo)
+    } else {
+      // 创建新用户记录 - 使用传入的用户信息
+      const newUser = {
+        openid: openid,
+        name: (userInfo && userInfo.nickName) ? userInfo.nickName : `微信用户_${Math.floor(Math.random() * 10000)}`,
+        avatar: (userInfo && userInfo.avatarUrl) ? userInfo.avatarUrl : 'https://thirdwx.qlogo.cn/mmopen/vi_32/POgEwh4mIHO4nibH0KlMECNjjGxQUl24cLiaEwdBbCHnElQzBf0x9Yc2icJ0Y9nSKhEXQnGHVicHjaNQ6GoAhjibcPA/132',
+        gender: (userInfo && userInfo.gender) ? userInfo.gender : 0,
+        city: (userInfo && userInfo.city) ? userInfo.city : '',
+        province: (userInfo && userInfo.province) ? userInfo.province : '',
+        country: (userInfo && userInfo.country) ? userInfo.country : '',
+        login_type: 'wechat',
+        has_real_info: !!(userInfo && userInfo.nickName && userInfo.nickName !== '微信用户'),
+        session_key: session_key,
+        created_at: new Date().toISOString(),
+        last_login_time: new Date().toISOString()
+      }
+
+      const { data: createdUser, error: createError } = await supabase
+        .from('app_users')
+        .insert(newUser)
         .select()
         .single()
 
-      if (insertError) {
-        console.error('❌ 创建用户失败:', insertError)
-        throw new Error('用户创建失败')
+      if (createError) {
+        console.error('创建用户失败:', createError)
+        throw new Error('用户创建失败，请稍后重试')
       }
-      
-      userInfo = newUser
-      console.log('👤 创建新用户:', openid)
+
+      userInfo = {
+        id: createdUser.id,
+        openid: createdUser.openid,
+        name: createdUser.name,
+        avatar: createdUser.avatar,
+        gender: createdUser.gender,
+        city: createdUser.city,
+        province: createdUser.province,
+        country: createdUser.country,
+        loginType: 'wechat',
+        hasRealInfo: createdUser.has_real_info
+      }
     }
 
-    // 4. 生成自定义登录态 token
-    const customToken = generateCustomToken(openid, session_key)
-
-    // 5. 保存 session 信息到数据库（可选，用于会话管理）
-    const sessionData = {
-      user_id: userInfo.id,
-      openid: openid,
-      session_key: session_key, // 注意：实际生产环境中不应该直接存储 session_key
-      token: customToken,
-      created_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30天
-      is_active: true
-    }
-
-    const { error: sessionError } = await supabase
-      .from('user_sessions')
-      .insert(sessionData)
-
-    if (sessionError) {
-      console.warn('⚠️ 保存会话信息失败:', sessionError)
-    } else {
-      console.log('✅ 会话信息已保存')
-    }
-
-    console.log('🔐 生成自定义 token:', customToken.substring(0, 20) + '...')
-
-    // 6. 返回成功响应给小程序
-    const response = {
-      success: true,
-      token: customToken,
-      userInfo: {
-        id: userInfo.id,
-        openid: userInfo.openid,
-        name: userInfo.name,
-        avatar: userInfo.avatar,
-        login_count: userInfo.login_count,
-        last_login_time: userInfo.last_login_time,
-        has_real_info: userInfo.has_real_info
-      },
-      message: '登录成功'
-    }
+    console.log('用户处理完成:', {
+      id: userInfo.id,
+      openid: userInfo.openid,
+      name: userInfo.name
+    })
 
     return new Response(
-      JSON.stringify(response),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      JSON.stringify({
+        success: true,
+        token: token,
+        userInfo: userInfo,
+        message: '登录成功'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
       }
     )
 
   } catch (error) {
-    console.error('❌ 微信登录处理失败:', error)
+    console.error('Edge Function 错误:', error)
     
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        message: error.message || '服务器内部错误' 
+      JSON.stringify({
+        success: false,
+        error: error.message || '服务器内部错误'
       }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
       }
     )
   }
 })
-
-/**
- * 向微信服务器请求换取 OpenID 和 session_key
- */
-async function getWechatUserInfo(code: string) {
-  try {
-    const url = `${WECHAT_CONFIG.apiDomain}/sns/jscode2session`
-    const params = new URLSearchParams({
-      appid: WECHAT_CONFIG.appId,
-      secret: WECHAT_CONFIG.appSecret,
-      js_code: code,
-      grant_type: WECHAT_CONFIG.grantType
-    })
-
-    console.log('📡 向微信服务器请求:', url)
-    console.log('📋 请求参数:', { 
-      appid: WECHAT_CONFIG.appId, 
-      secret: '***', 
-      js_code: code, 
-      grant_type: WECHAT_CONFIG.grantType 
-    })
-
-    const response = await fetch(`${url}?${params}`)
-    const data = await response.json()
-
-    if (data.errcode) {
-      console.error('❌ 微信服务器返回错误:', data)
-      return {
-        success: false,
-        message: getWechatErrorMessage(data.errcode)
-      }
-    }
-
-    console.log('✅ 成功获取用户信息')
-    return {
-      success: true,
-      data: {
-        openid: data.openid,
-        session_key: data.session_key,
-        unionid: data.unionid // 可选字段
-      }
-    }
-
-  } catch (error) {
-    console.error('❌ 请求微信服务器失败:', error.message)
-    return {
-      success: false,
-      message: '网络请求失败'
-    }
-  }
-}
-
-/**
- * 生成自定义登录态 token
- */
-function generateCustomToken(openid: string, sessionKey: string) {
-  const payload = {
-    openid,
-    iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60) // 30天过期
-  }
-  
-  // 使用简单的 HMAC-SHA256 签名（实际项目中应使用更安全的方式）
-  const encoder = new TextEncoder()
-  const keyData = encoder.encode(Deno.env.get('JWT_SECRET') || 'default_jwt_secret')
-  const data = encoder.encode(JSON.stringify(payload))
-  
-  // 这里使用 Deno 内置的加密功能
-  const signature = btoa(JSON.stringify({ payload, sig: 'mock_signature' }))
-  
-  return `token_${openid}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-}
-
-/**
- * 获取微信错误码对应的消息
- */
-function getWechatErrorMessage(errcode: string | number): string {
-  const errorMap: Record<string, string> = {
-    '40013': '无效的 AppID',
-    '40014': '无效的 AppSecret',
-    '40029': 'code 无效',
-    '45011': 'API 调用太频繁，请稍后再试',
-    '40125': '无效的密钥',
-    '40007': '获取用户信息失败'
-  }
-  
-  return errorMap[String(errcode)] || `未知错误码: ${errcode}`
-}

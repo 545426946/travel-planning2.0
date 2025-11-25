@@ -6,6 +6,10 @@ const Auth = require('./auth').Auth
 const supabaseUrl = 'https://hmnjuntvubqvbpeyqoxw.supabase.co'
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhtbmp1bnR2dWJxdmJwZXlxb3h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MjEwNDYsImV4cCI6MjA3ODk5NzA0Nn0.BCp0_8M3OhlIhLQ4fz54le-sWqZeUx9JDRXr1XRsX8g'
 
+// 微信小程序配置（请确认这些配置是否正确）
+const WECHAT_APP_ID = 'wx8a5b2c3d4e5f6g7' // 请替换为你的实际AppID
+const WECHAT_APP_SECRET = 'your_app_secret_here' // 请替换为你的实际AppSecret
+
 /**
  * 微信登录服务类
  * 按照微信官方推荐流程实现
@@ -15,6 +19,20 @@ class WechatLogin {
     // 微信小程序配置（需要从后台获取）
     this.appId = 'your_mini_program_appid' // 替换为实际的 AppID
     this.serverUrl = 'your_server_url' // 替换为实际的服务器地址
+    this.userInfo = null // 存储用户信息
+  }
+
+  /**
+   * 设置用户信息（供Edge Function使用）
+   * @param {Object} userInfo - 用户信息
+   */
+  setUserInfo(userInfo) {
+    this.userInfo = userInfo
+    console.log('✅ 用户信息已设置到登录服务:', {
+      昵称: userInfo.nickName,
+      头像: userInfo.avatarUrl,
+      城市: userInfo.city
+    })
   }
 
   /**
@@ -74,28 +92,43 @@ class WechatLogin {
   }
 
   /**
-   * 3. 发送 code 到 Supabase Edge Function
+   * 3. 调用Supabase Edge Function进行微信认证
    * @param {string} code - 微信登录临时凭证
    */
   async sendCodeToServer(code) {
+    console.log('🚀 使用微信Edge Function认证')
+    
     try {
-      console.log('📡 发送 code 到 Supabase Edge Function:', code)
-      
-      // 调用 Supabase Edge Function
-      const response = await this.callSupabaseFunction('wechat-login', { code })
-      
-      if (response.success) {
-        return response
-      } else {
-        throw new Error(response.message || '服务器处理失败')
+      // 准备发送到Edge Function的数据
+      const requestData = { 
+        code: code
       }
       
-    } catch (error) {
-      console.error('❌ 调用 Supabase Function 失败:', error)
+      // 如果有用户信息，一起发送
+      if (this.userInfo) {
+        requestData.userInfo = this.userInfo
+        console.log('📤 发送用户信息到Edge Function:', {
+          昵称: this.userInfo.nickName,
+          头像: this.userInfo.avatarUrl
+        })
+      }
       
-      // 如果 Edge Function 不可用，使用本地 fallback
-      console.log('🔄 Edge Function 不可用，使用本地处理')
-      return await this.localWechatLoginFallback(code)
+      // 调用Edge Function
+      const result = await this.callSupabaseFunction('wechat-login', requestData)
+      console.log('✅ Edge Function认证成功')
+      
+      // 清除用户信息
+      this.userInfo = null
+      
+      return result
+    } catch (error) {
+      console.error('❌ Edge Function认证失败:', error.message)
+      
+      // 清除用户信息
+      this.userInfo = null
+      
+      // 如果Edge Function失败，不使用fallback，直接抛出错误
+      throw new Error(`微信认证失败: ${error.message}`)
     }
   }
 
@@ -104,6 +137,12 @@ class WechatLogin {
    */
   async callSupabaseFunction(functionName, data) {
     return new Promise((resolve, reject) => {
+      console.log('🔗 调用 Edge Function:', {
+        url: `${supabaseUrl}/functions/v1/${functionName}`,
+        functionName,
+        hasData: !!data
+      })
+
       wx.request({
         url: `${supabaseUrl}/functions/v1/${functionName}`,
         method: 'POST',
@@ -111,87 +150,42 @@ class WechatLogin {
           'Authorization': `Bearer ${supabaseAnonKey}`,
           'Content-Type': 'application/json'
         },
-        data: data,
+        data: JSON.stringify(data),
         success: (res) => {
+          console.log('📨 Edge Function 响应:', {
+            statusCode: res.statusCode,
+            data: res.data,
+            header: res.header
+          })
+
           if (res.statusCode === 200) {
-            resolve(res.data)
+            try {
+              const responseData = typeof res.data === 'string' ? JSON.parse(res.data) : res.data
+              resolve(responseData)
+            } catch (parseError) {
+              console.error('解析响应数据失败:', parseError)
+              reject(new Error('服务器响应格式错误'))
+            }
           } else {
-            reject(new Error(res.data?.message || '请求失败'))
+            console.error('Edge Function 请求失败:', res)
+            reject(new Error(res.data?.message || `请求失败 (${res.statusCode})`))
           }
         },
         fail: (err) => {
+          console.error('🌐 网络请求失败:', {
+            errMsg: err.errMsg,
+            url: `${supabaseUrl}/functions/v1/${functionName}`
+          })
           reject(new Error(err.errMsg || '网络请求失败'))
-        }
+        },
+        timeout: 15000
       })
     })
   }
 
-  /**
-   * 5. 本地微信登录 Fallback（当 Edge Function 不可用时）
-   */
-  async localWechatLoginFallback(code) {
-    console.log('🔄 使用本地微信登录 fallback')
-    
-    // 生成基础用户信息
-    const timestamp = Date.now()
-    const userInfo = {
-      id: timestamp,
-      openid: `local_${code.substring(0, 8)}_${timestamp}`,
-      name: '微信用户',
-      avatar: 'https://thirdwx.qlogo.cn/mmopen/vi_32/POgEwh4mIHO4nibH0KlMECNjjGxQUl24cLiaEwdBbCHnElQzBf0x9Yc2icJ0Y9nSKhEXQnGHVicHjaNQ6GoAhjibcPA/132',
-      gender: 0,
-      city: '',
-      province: '',
-      country: '',
-      loginType: 'wechat',
-      loginTime: timestamp,
-      hasRealInfo: false
-    }
 
-    try {
-      // 保存到 Supabase
-      await this.saveUserInfoToDatabase(userInfo)
-      console.log('✅ 用户信息已保存到 Supabase')
-      
-      const customToken = this.generateCustomToken(userInfo.id)
-      
-      return {
-        success: true,
-        token: customToken,
-        userInfo: userInfo,
-        message: '登录成功（本地模式）'
-      }
-    } catch (error) {
-      console.error('❌ 本地登录失败:', error)
-      throw error
-    }
-  }
 
-  /**
-   * 6. 保存用户信息到 Supabase 数据库
-   */
-  async saveUserInfoToDatabase(userInfo) {
-    const { error } = await supabase
-      .from('users')
-      .upsert({
-        openid: userInfo.openid,
-        name: userInfo.name,
-        avatar: userInfo.avatar,
-        gender: userInfo.gender,
-        city: userInfo.city,
-        province: userInfo.province,
-        country: userInfo.country,
-        login_type: 'wechat',
-        has_real_info: userInfo.hasRealInfo,
-        last_login_time: new Date().toISOString()
-      }, {
-        onConflict: 'openid'
-      })
 
-    if (error) {
-      throw new Error(`数据库保存失败: ${error.message}`)
-    }
-  }
 
   /**
    * 6. 生成自定义登录态 token
@@ -199,6 +193,10 @@ class WechatLogin {
   generateCustomToken(userId) {
     return `token_${userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
+
+
+
+
 
   /**
    * 7. 保存登录态到本地存储
