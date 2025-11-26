@@ -10,11 +10,11 @@
   <!-- 创建行程按钮组 -->
   <view class="create-section">
     <button class="create-btn manual" bindtap="createNewPlan">
-      <view class="btn-icon">➕</view>
+      <view class="btn-icon"></view>
       <text>手动创建</text>
     </button>
     <button class="create-btn ai" bindtap="createNewPlan">
-      <view class="btn-icon">🤖</view>
+      <view class="btn-icon"></view>
       <text>AI智能规划</text>
     </button>
   </view>
@@ -72,7 +72,7 @@
         
         <!-- AI标记 -->
         <view wx:if="{{item.isAIGenerated}}" class="ai-badge">
-          <text>🤖 AI生成</text>
+          <text>AI生成</text>
         </view>
 
         <!-- 行程信息 -->

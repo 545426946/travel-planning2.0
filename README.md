@@ -94,7 +94,7 @@
    ```
 
 3. 微信开发者工具配置：
-   - AppID: wxb9ca37c30f43d5b8
+   - AppID: wx31db19e0efdc4d9d
    - 项目根目录: 当前目录
 
 ## 部署说明

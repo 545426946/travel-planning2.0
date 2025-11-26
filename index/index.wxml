@@ -3,7 +3,7 @@
   <scroll-view wx:if="{{currentTab === 0}}" class="scroll-area" scroll-y>
     <view class="header-section">
       <view class="top-bar">
-        <text class="logo">AI Travel</text>
+        <text class="logo">轻松旅行规划</text>
         <view class="user-info" wx:if="{{userInfo}}" bindtap="showUserOptions">
           <image class="user-avatar" src="{{userInfo.avatar}}" mode="aspectFill" binderror="onImageError"></image>
           <text class="username">{{userInfo.name}}</text>
@@ -13,8 +13,8 @@
         </view>
       </view>
       <view class="hero-section">
-        <text class="hero-title">轻松完美旅行规划</text>
-        <text class="hero-subtitle">一键探索，开启你的完美旅程</text>
+        <text class="hero-title">帮您轻松进行完美旅行规划</text>
+        <text class="hero-subtitle">一键探索，开启你的旅程</text>
         <view class="button-group">
           <button class="explore-btn" bindtap="exploreDestinations">立即探索</button>
           <button class="ai-btn" bindtap="showAIHelper">AI助手</button>
@@ -26,17 +26,6 @@
       <view class="section-title">探索地图</view>
       <view class="map-container">
         <image class="map-image" src="https://picsum.photos/seed/map/800/400.jpg" mode="widthFix"></image>
-        <view class="map-overlay">
-          <view class="map-icon camera-icon">
-            <icon type="info" size="20" color="#fff"></icon>
-          </view>
-          <view class="map-icon pencil-icon">
-            <icon type="info" size="20" color="#fff"></icon>
-          </view>
-          <view class="map-icon book-icon">
-            <icon type="info" size="20" color="#fff"></icon>
-          </view>
-        </view>
       </view>
     </view>
     

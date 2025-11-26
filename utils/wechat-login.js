@@ -7,7 +7,7 @@ const supabaseUrl = 'https://hmnjuntvubqvbpeyqoxw.supabase.co'
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhtbmp1bnR2dWJxdmJwZXlxb3h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MjEwNDYsImV4cCI6MjA3ODk5NzA0Nn0.BCp0_8M3OhlIhLQ4fz54le-sWqZeUx9JDRXr1XRsX8g'
 
 // 微信小程序配置（请确认这些配置是否正确）
-const WECHAT_APP_ID = 'wx8a5b2c3d4e5f6g7' // 请替换为你的实际AppID
+const WECHAT_APP_ID = 'wx31db19e0efdc4d9d' // 请替换为你的实际AppID
 const WECHAT_APP_SECRET = 'your_app_secret_here' // 请替换为你的实际AppSecret
 
 /**
@@ -17,7 +17,7 @@ const WECHAT_APP_SECRET = 'your_app_secret_here' // 请替换为你的实际AppS
 class WechatLogin {
   constructor() {
     // 微信小程序配置（需要从后台获取）
-    this.appId = 'your_mini_program_appid' // 替换为实际的 AppID
+    this.appId = 'wx31db19e0efdc4d9d' // 替换为实际的 AppID
     this.serverUrl = 'your_server_url' // 替换为实际的服务器地址
     this.userInfo = null // 存储用户信息
   }

@@ -13,7 +13,7 @@ app.use(express.json())
 
 // 微信小程序配置
 const WECHAT_CONFIG = {
-  appId: 'your_mini_program_appid',      // 替换为你的小程序 AppID
+  appId: 'wx31db19e0efdc4d9d',      // 替换为你的小程序 AppID
   appSecret: 'your_mini_program_appsecret', // 替换为你的小程序 AppSecret
   grantType: 'authorization_code',
   apiDomain: 'https://api.weixin.qq.com'

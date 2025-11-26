@@ -1,7 +1,7 @@
 /* 页面容器 */
 .container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg,rgb(119, 129, 179) 0%,rgb(130, 128, 168) 100%);
   padding-bottom: 40rpx;
 }
 
@@ -50,11 +50,13 @@
 }
 
 .create-btn.manual {
-  background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+  color:rgb(72, 75, 95);
+  background: linear-gradient(135deg,rgb(198, 193, 170) 0%,rgb(211, 219, 192) 100%);
 }
 
 .create-btn.ai {
-  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  color:rgb(72, 75, 95);
+  background: linear-gradient(135deg,rgb(208, 204, 220) 0%,rgb(189, 180, 205) 100%);
 }
 
 .btn-icon {
@@ -162,7 +164,7 @@
   position: absolute;
   top: 20rpx;
   right: 20rpx;
-  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  background: linear-gradient(135deg,rgb(136, 125, 163) 0%,rgb(144, 133, 164) 100%);
   color: white;
   padding: 12rpx 24rpx;
   border-radius: 30rpx;

@@ -2,7 +2,7 @@
 
 page {
   height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg,rgb(131, 179, 237) 0%,rgb(131, 179, 237) 100%);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
 
@@ -255,10 +255,10 @@ page {
 
 /* 登录按钮 */
 .login-btn {
-  width: 100%;
-  height: 100rpx;
-  border-radius: 50rpx;
-  font-size: 32rpx;
+  width: calc(100% - 80rpx);
+  height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 30rpx;
   font-weight: 600;
   border: none;
   margin-bottom: 30rpx;
@@ -266,6 +266,8 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-left: 40rpx;
+  margin-right: 40rpx;
 }
 
 .login-btn::after {
@@ -273,7 +275,7 @@ page {
 }
 
 .account-btn {
-  background: linear-gradient(45deg, #667eea, #764ba2);
+  background: linear-gradient(45deg,rgb(102, 234, 175),rgb(99, 206, 156));
   color: white;
   box-shadow: 0 10rpx 25rpx rgba(102, 126, 234, 0.3);
 }
@@ -284,13 +286,14 @@ page {
 }
 
 .wechat-btn {
-  background: #07c160;
-  color: white;
+  background: linear-gradient(45deg,rgb(102, 234, 175),rgb(99, 206, 156));
+  color:rgb(255, 255, 255);
+  font-weight: bold;
   box-shadow: 0 10rpx 25rpx rgba(7, 193, 96, 0.3);
 }
 
 .wechat-btn.primary {
-  background: #07c160;
+  background: linear-gradient(45deg,rgb(102, 234, 175),rgb(99, 206, 156));
   font-weight: bold;
   font-size: 32rpx;
 }

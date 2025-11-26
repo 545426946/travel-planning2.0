@@ -10,8 +10,8 @@
   <view class="main-content">
     <!-- Logo 和标题 -->
     <view class="logo-section">
-      <image class="logo" src="/images/logo.png" mode="aspectFit" binderror="onImageError"></image>
-      <text class="app-name">旅行规划</text>
+      <image class="logo" src="/pages/image/logo.png" mode="aspectFit" binderror="onImageError"></image>
+      <text class="app-name">轻松旅行规划</text>
       <text class="app-slogan">让旅行更简单，让体验更精彩</text>
     </view>
 
