@@ -1,0 +1,230 @@
+/* 页面容器 */
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding-bottom: 40rpx;
+}
+
+/* 页面标题 */
+.page-header {
+  padding: 60rpx 40rpx 40rpx;
+  color: white;
+}
+
+.page-title {
+  font-size: 56rpx;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.page-subtitle {
+  font-size: 28rpx;
+  opacity: 0.9;
+  display: block;
+}
+
+/* 表单容器 */
+.form-container {
+  background: #F5F7FA;
+  border-radius: 40rpx 40rpx 0 0;
+  padding: 40rpx;
+}
+
+/* 表单区块 */
+.form-section {
+  margin-bottom: 40rpx;
+}
+
+.form-label {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16rpx;
+  display: flex;
+  align-items: center;
+}
+
+.form-label.required::after {
+  content: '*';
+  color: #FF6B6B;
+  margin-left: 8rpx;
+}
+
+/* 输入框 */
+.form-input {
+  width: 100%;
+  height: 88rpx;
+  background: white;
+  border-radius: 16rpx;
+  padding: 0 30rpx;
+  font-size: 28rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.3s;
+}
+
+.form-input.error {
+  border-color: #FF6B6B;
+}
+
+.form-input:focus {
+  border-color: #4A90E2;
+}
+
+/* 文本域 */
+.form-textarea {
+  width: 100%;
+  min-height: 160rpx;
+  background: white;
+  border-radius: 16rpx;
+  padding: 24rpx 30rpx;
+  font-size: 28rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.3s;
+}
+
+.form-textarea:focus {
+  border-color: #4A90E2;
+}
+
+/* 错误提示 */
+.error-text {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #FF6B6B;
+}
+
+/* 日期选择 */
+.date-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.date-picker {
+  flex: 1;
+  background: white;
+  border-radius: 16rpx;
+  padding: 24rpx;
+}
+
+.date-label {
+  font-size: 24rpx;
+  color: #999;
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.picker-value {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.picker-value.error {
+  color: #FF6B6B;
+}
+
+.date-separator {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 数字输入 */
+.number-input {
+  background: white;
+  border-radius: 16rpx;
+  padding: 30rpx;
+}
+
+.number-label {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #4A90E2;
+  display: block;
+  margin-bottom: 20rpx;
+}
+
+/* 选择器显示 */
+.picker-display {
+  background: white;
+  border-radius: 16rpx;
+  padding: 24rpx 30rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 28rpx;
+}
+
+.arrow {
+  font-size: 20rpx;
+  color: #999;
+}
+
+/* 标签选择器 */
+.tags-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.tag-item {
+  padding: 16rpx 32rpx;
+  background: white;
+  border: 2rpx solid #E0E0E0;
+  border-radius: 30rpx;
+  font-size: 26rpx;
+  color: #666;
+  transition: all 0.3s;
+}
+
+.tag-item.selected {
+  background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+  border-color: transparent;
+  color: white;
+}
+
+.tag-item.add-tag {
+  background: #F0F4FF;
+  border-color: #4A90E2;
+  color: #4A90E2;
+  border-style: dashed;
+}
+
+/* 表单操作按钮 */
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  margin-top: 60rpx;
+  padding-bottom: 40rpx;
+}
+
+.submit-btn {
+  height: 96rpx;
+  background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+  color: white;
+  border-radius: 48rpx;
+  border: none;
+  font-size: 32rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.submit-btn[disabled] {
+  opacity: 0.6;
+}
+
+.reset-btn {
+  height: 96rpx;
+  background: white;
+  color: #666;
+  border-radius: 48rpx;
+  border: 2rpx solid #E0E0E0;
+  font-size: 30rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

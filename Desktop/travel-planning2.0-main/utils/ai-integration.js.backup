@@ -1,0 +1,1035 @@
+// utils/ai-integration.js - AI 集成工具类
+const aiService = require('./ai-service').aiService
+const db = require('./database').db
+// 使用真实的 Supabase 连接（需要配置域名白名单）
+const supabase = require('./supabase').supabase
+// const supabase = require('./supabase-mock').supabase
+
+class AIIntegration {
+  // 智能行程规划
+  async planIntelligentItinerary(userId, userInput, formData = {}, saveToDatabase = true) {
+    try {
+      // 获取用户偏好
+      const preferencesResult = await db.userPreferences.getByUserId(userId)
+      const preferences = preferencesResult.data
+      
+      // 生成行程计划
+      const aiResponse = await aiService.generateTravelPlan(userInput, preferences || {})
+      
+      // 解析AI响应（传入用户表单数据）
+      const planData = this.parseAIResponseToPlan(aiResponse, userId, formData)
+      
+      if (saveToDatabase && planData) {
+        // 保存到数据库
+        const result = await db.travelPlans.create({
+          user_id: userId,
+          title: planData.title,
+          description: planData.description,
+          destination: planData.destination,
+          start_date: planData.startDate,
+          end_date: planData.endDate,
+          total_budget: planData.budget,
+          total_days: planData.totalDays,
+          travelers_count: planData.travelersCount,
+          travel_style: planData.travelStyle,
+          interests: planData.interests,
+          itinerary: planData.itinerary,
+          is_ai_generated: true,
+          status: 'planned',
+          tags: planData.tags,
+          transportation: planData.transportation,
+          accommodation: planData.accommodation,
+          special_requirements: planData.specialRequirements
+        })
+        
+        return { success: true, data: result.data, aiResponse, planData }
+      } else if (planData) {
+        // 仅返回规划数据，不保存
+        return { success: true, planData, aiResponse }
+      }
+      
+      return { success: false, aiResponse }
+    } catch (error) {
+      console.error('智能行程规划失败:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // 仅保存行程（不重新生成）
+  async savePlanOnly(userId, planData) {
+    try {
+      if (!planData) {
+        return { success: false, error: '没有可保存的行程数据' }
+      }
+
+      console.log('开始保存行程数据:', planData.title)
+      console.log('完整的planData对象:', JSON.stringify(planData, null, 2))
+
+      let itineraryObj = null
+      if (planData && typeof planData.itinerary === 'string') {
+        const parsed = this.extractJSONFromText(planData.itinerary)
+        if (parsed && (parsed.days || Array.isArray(parsed))) {
+          itineraryObj = Array.isArray(parsed) ? { days: parsed } : parsed
+        }
+      } else if (planData && typeof planData.itinerary === 'object') {
+        itineraryObj = planData.itinerary
+      }
+
+      if (!itineraryObj && planData && typeof planData.description === 'string') {
+        const parsedFromDesc = this.extractJSONFromText(planData.description)
+        if (parsedFromDesc && (parsedFromDesc.days || Array.isArray(parsedFromDesc))) {
+          itineraryObj = Array.isArray(parsedFromDesc) ? { days: parsedFromDesc } : parsedFromDesc
+        }
+      }
+
+      const payload = {
+        user_id: userId,
+        title: planData.title,
+        description: itineraryObj ? this.summarizeItinerary(itineraryObj, planData.totalDays) : (planData.description || ''),
+        destination: planData.destination,
+        start_date: planData.startDate,
+        end_date: planData.endDate,
+        total_budget: planData.budget || 0,
+        total_days: planData.totalDays || 1,
+        travelers_count: planData.travelersCount || 1,
+        travel_style: planData.travelStyle || 'comfortable',
+        interests: Array.isArray(planData.interests) ? planData.interests : JSON.parse(planData.interests || '[]'),
+        itinerary: itineraryObj ? JSON.stringify(itineraryObj) : (planData.itinerary || ''),
+        is_ai_generated: true,
+        status: 'planned',
+        tags: Array.isArray(planData.tags) ? planData.tags : (planData.tags ? planData.tags.split(',') : []),
+        transportation: planData.transportation || '',
+        accommodation: planData.accommodation || '',
+        special_requirements: planData.specialRequirements || ''
+      }
+
+      console.log('准备发送到数据库的payload:', JSON.stringify(payload, null, 2))
+      
+      const result = await db.travelPlans.create(payload)
+
+      if (result.error && !result.isExisting) {
+        throw new Error(result.error.message || '保存失败')
+      }
+
+      if (result.isExisting) {
+        console.log('行程已存在，返回现有数据:', result.data.id)
+        return {
+          success: true,
+          data: result.data,
+          message: '重复行程已存在，未重复保存'
+        }
+      }
+
+      console.log('行程保存成功:', result.data)
+      
+      return {
+        success: true,
+        data: result.data,
+        message: '行程保存成功'
+      }
+    } catch (error) {
+      console.error('保存行程失败:', error)
+      return { 
+        success: false, 
+        error: error.message || '保存行程时出现错误'
+      }
+    }
+  }
+
+  // 智能景点推荐
+  async getSmartDestinationRecommendations(userId, currentLocation = null) {
+    try {
+      // 获取用户偏好
+      const preferencesResult = await db.userPreferences.getByUserId(userId)
+      const preferences = preferencesResult.data
+      
+      // 获取用户历史收藏
+      const favoritesResult = await db.favorites.getUserFavorites(userId, 'destination')
+      const favorites = favoritesResult.data
+      
+      // 生成AI推荐
+      const aiResponse = await aiService.recommendDestinations(
+        preferences || {}, 
+        currentLocation
+      )
+      
+      // 解析推荐结果
+      const recommendations = this.parseDestinationRecommendations(aiResponse)
+      
+      return {
+        success: true,
+        recommendations,
+        aiResponse,
+        userPreferences: preferences
+      }
+    } catch (error) {
+      console.error('智能景点推荐失败:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // 创建AI生成路线
+  async createAIGeneratedRoute(routeTheme, difficulty, duration, createdBy = null) {
+    try {
+      const aiResponse = await aiService.generatePopularRoute(routeTheme, difficulty, duration)
+      
+      const routeData = this.parseAIRouteToData(aiResponse, routeTheme)
+      
+      if (routeData) {
+        const result = await supabase
+          .from('popular_routes')
+          .insert({
+            title: routeData.title,
+            description: routeData.description,
+            destination: routeData.destination,
+            duration: routeData.duration,
+            budget: routeData.budget,
+            itinerary: routeData.itinerary,
+            tags: routeData.tags,
+            is_ai_generated: true,
+            created_by: createdBy
+          })
+          .select()
+        
+        return { success: true, data: result.data, aiResponse }
+      }
+      
+      return { success: false, aiResponse }
+    } catch (error) {
+      console.error('AI路线生成失败:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // 行程优化建议
+  async optimizeItinerary(planId, optimizationGoal = '优化时间安排') {
+    try {
+      // 获取行程详情
+      const planResult = await db.travelPlans.getById(planId)
+      const plan = planResult.data
+      
+      if (!plan) {
+        return { success: false, error: '行程不存在' }
+      }
+      
+      // 生成优化建议
+      const aiResponse = await aiService.optimizeTravelPlan(plan, optimizationGoal)
+      
+      // 保存优化建议到数据库
+      const optimizationData = {
+        plan_id: planId,
+        optimization_goal: optimizationGoal,
+        ai_suggestions: aiResponse,
+        created_at: new Date().toISOString()
+      }
+      
+      // 这里可以保存到专门的优化建议表，或者更新计划字段
+      const updateResult = await db.travelPlans.update(planId, {
+        ai_optimization_suggestions: optimizationData
+      })
+      
+      return { success: true, data: updateResult.data, aiResponse }
+    } catch (error) {
+      console.error('行程优化失败:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // 智能问答
+  async askTravelQuestion(userId, question, context = {}) {
+    try {
+      const preferencesResult = await db.userPreferences.getByUserId(userId)
+      const preferences = preferencesResult.data
+      const recentPlansResult = await db.travelPlans.getByUserId(userId, 'planned', 3)
+      const recentPlans = recentPlansResult.data
+      
+      const enrichedContext = Object.assign({
+        userPreferences: preferences,
+        recentPlans: recentPlans
+      }, context)
+      
+      const aiResponse = await aiService.travelQA(question, enrichedContext)
+      
+      // 保存问答记录（可选）
+      // 这里可以保存到问答历史表
+      const result = await db.qaPairs.create({
+         user_id: userId,
+         question: question,
+         answer: aiResponse,
+         context: enrichedContext,
+         created_at: new Date().toISOString()
+       })
+       
+       return { success: true, answer: aiResponse }
+    } catch (error) {
+      console.error('智能问答失败:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // 生成个性化推荐
+  async getPersonalizedRecommendations(userId) {
+    try {
+      const aiResponse = await aiService.generatePersonalizedRecommendations(userId)
+      
+      const recommendations = this.parsePersonalizedRecommendations(aiResponse)
+      
+      return { success: true, recommendations, aiResponse }
+    } catch (error) {
+      console.error('个性化推荐失败:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // 批量生成景点描述
+  async batchGenerateDestinationDescriptions(destinations) {
+    const results = []
+    
+    for (const dest of destinations) {
+      try {
+        const aiResponse = await aiService.generateDestinationDescription(
+          dest.name, 
+          { location: dest.location, category: dest.category }
+        )
+        
+        const description = this.parseDestinationDescription(aiResponse)
+        
+        // 更新数据库
+        await supabase
+          .from('destinations')
+          .update({
+            description: description.full,
+            short_desc: description.short,
+            tags: description.tags
+          })
+          .eq('id', dest.id)
+        
+        results.push({ id: dest.id, success: true, description })
+      } catch (error) {
+        results.push({ id: dest.id, success: false, error: error.message })
+      }
+    }
+    
+    return results
+  }
+
+  // 解析AI行程响应
+  parseAIResponseToPlan(aiResponse, userId, formData = {}) {
+    try {
+      let parsedJSON = null
+      if (typeof aiResponse === 'string') {
+        parsedJSON = this.extractJSONFromText(aiResponse)
+      } else if (typeof aiResponse === 'object') {
+        parsedJSON = aiResponse
+      }
+      // 从用户表单数据中提取基础信息
+      const destination = formData.destination || this.extractDestination(aiResponse)
+      const budget = formData.budget || this.extractBudget(aiResponse)
+      const days = formData.days || '3天'
+      const travelers = formData.travelers || 1
+      const style = formData.style || 'comfortable'
+      const interests = formData.interests || []
+      const specialRequirements = formData.specialRequirements || ''
+      
+      // 计算总天数
+      const totalDays = parseInt(days) || 3
+      
+      // 计算日期范围（从今天开始）
+      const today = new Date()
+      const startDate = today.toISOString().split('T')[0]
+      const endDate = new Date(today.getTime() + (totalDays - 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      
+      // 生成标题
+      const title = `${destination}${days}游 - AI智能规划`
+      
+      // 生成描述（从AI响应中提取前200字）
+      const description = parsedJSON ? this.summarizeItinerary(parsedJSON.itinerary || parsedJSON, totalDays) : aiResponse.substring(0, 200).replace(/\n/g, ' ')
+      
+      // 提取标签
+      const tags = this.extractTags(aiResponse)
+      // 添加兴趣标签
+      if (Array.isArray(interests)) {
+        tags.push(...interests.map(i => i.label || i))
+      }
+      // 添加风格标签
+      const styleMap = {
+        luxury: '轻奢型',
+        comfortable: '舒适享受',
+        premium: '奢华体验'
+      }
+      if (styleMap[style]) {
+        tags.push(styleMap[style])
+      }
+      
+      // 将AI响应规范化为结构化JSON，保证详情页可稳定展示
+      let normalizedItinerary = null
+      if (parsedJSON && (parsedJSON.itinerary || parsedJSON.days)) {
+        const obj = parsedJSON.itinerary || parsedJSON
+        normalizedItinerary = obj.days ? obj : { days: obj }
+      } else {
+        normalizedItinerary = this.normalizeItinerary(aiResponse, totalDays, startDate)
+      }
+
+      return {
+        title: title,
+        description: description,
+        destination: destination,
+        startDate: startDate,
+        endDate: endDate,
+        budget: parseFloat(budget) || 0,
+        totalDays: totalDays,
+        travelersCount: parseInt(travelers) || 1,
+        travelStyle: style,
+        interests: Array.isArray(interests) ? JSON.stringify(interests) : interests,
+        itinerary: JSON.stringify(normalizedItinerary),
+        tags: tags,
+        transportation: this.extractTransportation(aiResponse),
+        accommodation: this.extractAccommodation(aiResponse),
+        specialRequirements: specialRequirements
+      }
+    } catch (error) {
+      console.error('解析AI响应失败:', error)
+      return null
+    }
+  }
+
+  extractJSONFromText(text) {
+    if (!text) return null
+    const s = String(text).trim()
+    const fenceMatch = s.match(/```json\s*([\s\S]*?)\s*```/i)
+    const raw = fenceMatch ? fenceMatch[1] : s
+    const firstBrace = raw.indexOf('{')
+    const firstBracket = raw.indexOf('[')
+    let candidate = raw
+    if (firstBrace >= 0 || firstBracket >= 0) {
+      const start = Math.min(firstBrace >= 0 ? firstBrace : Infinity, firstBracket >= 0 ? firstBracket : Infinity)
+      candidate = raw.slice(start)
+    }
+    try {
+      const obj = JSON.parse(candidate)
+      return obj
+    } catch (e) {
+      return null
+    }
+  }
+
+  summarizeItinerary(itineraryObj, totalDays) {
+    const d = itineraryObj && itineraryObj.days ? itineraryObj.days : []
+    const days = totalDays || d.length || 1
+    
+    if (!d || d.length === 0) {
+      return `AI为您精心规划了${days}天的详细行程，包含每天的具体安排和实用建议。`
+    }
+
+    // 分析行程特点，智能生成描述
+    const tripAnalysis = this.analyzeTripCharacteristics(d)
+    
+    // 根据分析结果生成自然的描述
+    return this.generateNaturalDescription(tripAnalysis, days)
+  }
+
+  // 分析行程特点
+  analyzeTripCharacteristics(daysData) {
+    const analysis = {
+      destinations: [],
+      activities: [],
+      foodExperiences: [],
+      culturalElements: [],
+      natureActivities: [],
+      shoppingExperiences: [],
+      timeDistribution: {
+        morning: 0,
+        afternoon: 0,
+        evening: 0
+      },
+      tripStyle: 'general',
+      keyHighlights: [],
+      // 新增：详细时间安排
+      detailedSchedule: []
+    }
+
+    daysData.forEach(dayData => {
+      if (dayData && dayData.items) {
+        const daySchedule = {
+          morning: [],
+          noon: [],
+          noonFood: '',
+          afternoon: [],
+          evening: [],
+          eveningFood: ''
+        }
+
+        dayData.items.forEach(item => {
+          const title = item.title || ''
+          const time = item.time || ''
+          const location = item.location || ''
+          
+          // 分析时间段分布
+          if (time.includes('上午')) {
+            analysis.timeDistribution.morning++
+            const morningSpots = this.extractTimeSpots(title, location, 'morning')
+            daySchedule.morning.push(...morningSpots)
+          }
+          else if (time.includes('下午')) {
+            analysis.timeDistribution.afternoon++
+            const afternoonSpots = this.extractTimeSpots(title, location, 'afternoon')
+            daySchedule.afternoon.push(...afternoonSpots)
+          }
+          else if (time.includes('晚上') || time.includes('晚')) {
+            analysis.timeDistribution.evening++
+            const eveningSpots = this.extractTimeSpots(title, location, 'evening')
+            daySchedule.evening.push(...eveningSpots)
+            
+            // 检查是否是晚餐
+            const eveningFood = this.extractFoodFromTitle(title)
+            if (eveningFood) {
+              daySchedule.eveningFood = eveningFood
+            }
+          }
+          else if (time.includes('中午') || time.includes('午')) {
+            const noonSpots = this.extractTimeSpots(title, location, 'noon')
+            daySchedule.noon.push(...noonSpots)
+            
+            // 检查是否是午餐
+            const noonFood = this.extractFoodFromTitle(title)
+            if (noonFood) {
+              daySchedule.noonFood = noonFood
+            }
+          }
+          
+          // 原有的分析逻辑保持不变
+          const scenicSpots = this.extractScenicSpots(title)
+          analysis.destinations.push(...scenicSpots)
+          
+          const foodItems = this.extractFoodExperiences(title)
+          analysis.foodExperiences.push(...foodItems)
+          
+          const culturalItems = this.extractCulturalElements(title)
+          analysis.culturalElements.push(...culturalItems)
+          
+          const natureItems = this.extractNatureActivities(title)
+          analysis.natureActivities.push(...natureItems)
+          
+          const shoppingItems = this.extractShoppingExperiences(title)
+          analysis.shoppingExperiences.push(...shoppingItems)
+          
+          const generalActivities = this.extractGeneralActivities(title)
+          analysis.activities.push(...generalActivities)
+          
+          const highlights = this.extractHighlights(title)
+          analysis.keyHighlights.push(...highlights)
+        })
+
+        analysis.detailedSchedule.push(daySchedule)
+      }
+    })
+
+    // 去重并清理数据
+    Object.keys(analysis).forEach(key => {
+      if (Array.isArray(analysis[key])) {
+        analysis[key] = [...new Set(analysis[key])].filter(item => item && item.length > 1)
+      }
+    })
+
+    // 判断旅行风格
+    analysis.tripStyle = this.determineTripStyle(analysis)
+
+    return analysis
+  }
+
+  // 提取时间段内的地点信息
+  extractTimeSpots(title, location, timeSlot) {
+    const spots = []
+    
+    // 首先尝试从location字段获取
+    if (location && location.trim()) {
+      spots.push(location.trim())
+    }
+    
+    // 从title中提取地点
+    const locationPatterns = [
+      /(?:前往|去|到)([^，。\n]{2,15}(?:景区|景点|公园|广场|古镇|博物馆|美术馆|寺庙)/g,
+      /([^，。\n]{2,15}(：故宫|长城|天安门|颐和园|西湖|黄山|泰山|九寨沟|外滩|豫园|宽窄巷子|锦里))/g,
+      /(?:在)([^，。\n]{2,15}(：餐厅|酒楼|食府|茶馆|咖啡馆|商场|市场))/g,
+      /([^，。\n]{2,15}(：景区|景点|公园|广场|街道|古镇|古城))/g
+    ]
+    
+    locationPatterns.forEach(pattern => {
+      let match
+      while ((match = pattern.exec(title)) !== null) {
+        const spot = match[1].trim()
+        if (spot.length >= 2 && spot.length <= 15 && !spots.includes(spot)) {
+          spots.push(spot)
+        }
+      }
+    })
+    
+    // 如果还是没有找到，尝试提取活动地点
+    if (spots.length === 0) {
+      const activityPatterns = [
+        /([^，。\n]{2,15}(?:参观|游览|体验|品尝|购物))/g,
+        /([^，。\n]{2,15}(：登山|徒步|漂流|观光|散步))/g
+      ]
+      
+      activityPatterns.forEach(pattern => {
+        let match
+        while ((match = pattern.exec(title)) !== null) {
+          const activity = match[1].trim()
+          if (activity.length >= 2 && activity.length <= 15 && !spots.includes(activity)) {
+            spots.push(activity)
+          }
+        }
+      })
+    }
+    
+    return spots.slice(0, 3) // 最多返回3个地点
+  }
+
+  // 从标题中提取美食信息
+  extractFoodFromTitle(title) {
+    const foodPatterns = [
+      /(?:品尝|享用|吃)([^，。\n]{2,10}(：烤鸭|火锅|拉面|寿司|小笼包|海鲜|川菜|粤菜|本帮菜))/g,
+      /([^，。\n]{2,10}(：美食|料理|菜肴))/g
+    ]
+    
+    for (const pattern of foodPatterns) {
+      const match = pattern.exec(title)
+      if (match) {
+        return match[1].trim()
+      }
+    }
+    
+    return ''
+  }
+
+  // 提取景点信息
+  extractScenicSpots(title) {
+    const patterns = [
+      /(?:参观|游览|前往)([^，。\n]{2,15}(?:景点|景区|公园|花园|广场|街道|古镇|古城|村落|山区|海滨|湖畔|河畔))/g,
+      /([^，。\n]{2,15}(?:故宫|长城|天安门|颐和园|西湖|泰山|黄山|九寨沟|张家界|丽江|凤凰|敦煌|兵马俑|外滩|豫园))/g,
+      /([^，。\n]{2,15}(?:博物馆|纪念馆|展览馆|艺术馆|科技馆|图书馆))/g,
+      /([^，。\n]{2,15}(?:宽窄巷子|锦里|南锣鼓巷|南京路|王府井|春熙路))/g
+    ]
+    
+    const spots = []
+    patterns.forEach(pattern => {
+      let match
+      while ((match = pattern.exec(title)) !== null) {
+        const spot = match[1].trim()
+        if (spot.length >= 2 && spot.length <= 15) {
+          spots.push(spot)
+        }
+      }
+    })
+    return spots
+  }
+
+  // 提取美食体验
+  extractFoodExperiences(title) {
+    const patterns = [
+      /(?:品尝|享用|品尝|体验)([^，。\n]{2,12}(?:美食|料理|菜肴|小吃|特色菜))/g,
+      /([^，。\n]{2,12}(?:烤鸭|火锅|小笼包|拉面|寿司|烤肉|海鲜|甜品|咖啡|川菜|本帮菜))/g,
+      /([^，。\n]{2,12}(?:餐厅|酒楼|食府|茶馆|咖啡馆|美食街|夜市))/g
+    ]
+    
+    const foods = []
+    patterns.forEach(pattern => {
+      let match
+      while ((match = pattern.exec(title)) !== null) {
+        const food = match[1].trim()
+        if (food.length >= 2 && food.length <= 12) {
+          foods.push(food)
+        }
+      }
+    })
+    return foods
+  }
+
+  // 提取文化元素
+  extractCulturalElements(title) {
+    const patterns = [
+      /([^，。\n]*(?:文化|历史|传统|民俗|非遗|艺术|手工|工艺))/g,
+      /([^，。\n]*(?:表演|演出|戏曲|舞蹈|音乐|画展|展览))/g,
+      /([^，。\n]*(?:寺庙|道观|教堂|古迹|遗址|故居))/g
+    ]
+    
+    const cultural = []
+    patterns.forEach(pattern => {
+      let match
+      while ((match = pattern.exec(title)) !== null) {
+        cultural.push(match[1].trim())
+      }
+    })
+    return cultural
+  }
+
+  // 提取自然活动
+  extractNatureActivities(title) {
+    const patterns = [
+      /([^，。\n]*(?:登山|徒步|露营|观景|赏花|看日出|看日落|漂流))/g,
+      /([^，。\n]*(：爬山、攀岩、骑行、游泳、潜水、滑雪))/g,
+      /([^，。\n]*(?:森林公园|自然保护区|湿地公园|海滨浴场|山谷|瀑布))/g
+    ]
+    
+    const nature = []
+    patterns.forEach(pattern => {
+      let match
+      while ((match = pattern.exec(title)) !== null) {
+        nature.push(match[1].trim())
+      }
+    })
+    return nature
+  }
+
+  // 提取购物体验
+  extractShoppingExperiences(title) {
+    const patterns = [
+      /([^，。\n]*(?:购物|逛街|购买|选购))/g,
+      /([^，.\n]*(：商场、超市、市场、商店、店铺、专卖店))/g,
+      /([^，.\n]*(：特产、纪念品、手工艺品、伴手礼))/g
+    ]
+    
+    const shopping = []
+    patterns.forEach(pattern => {
+      let match
+      while ((match = pattern.exec(title)) !== null) {
+        shopping.push(match[1].trim())
+      }
+    })
+    return shopping
+  }
+
+  // 提取一般活动
+  extractGeneralActivities(title) {
+    const patterns = [
+      /([^，.\n]*(?:体验、感受、参与、尝试)[^，.\n]*)/g,
+      /([^，.\n]*(：游玩、娱乐、休闲、放松、观光))/g
+    ]
+    
+    const activities = []
+    patterns.forEach(pattern => {
+      let match
+      while ((match = pattern.exec(title)) !== null) {
+        activities.push(match[1].trim())
+      }
+    })
+    return activities
+  }
+
+  // 提取亮点
+  extractHighlights(title) {
+    const patterns = [
+      /([^，.\n]*(?:必去|必看|必吃|必玩|必体验|推荐|特色|著名|知名|网红|打卡)[^，.\n]*)/g,
+      /([^，.\n]*(：震撼、壮观、美丽、绝美、惊艳、难忘)[^，.\n]*)/g
+    ]
+    
+    const highlights = []
+    patterns.forEach(pattern => {
+      let match
+      while ((match = pattern.exec(title)) !== null) {
+        highlights.push(match[1].trim())
+      }
+    })
+    return highlights
+  }
+
+  // 判断旅行风格
+  determineTripStyle(analysis) {
+    const { destinations, foodExperiences, culturalElements, natureActivities, shoppingExperiences } = analysis
+    
+    if (culturalElements.length > natureActivities.length && culturalElements.length > 2) {
+      return 'cultural' // 文化深度游
+    } else if (natureActivities.length > 2) {
+      return 'nature' // 自然风光游
+    } else if (foodExperiences.length > 2) {
+      return 'food' // 美食之旅
+    } else if (shoppingExperiences.length > 1) {
+      return 'shopping' // 购物娱乐
+    } else if (destinations.length >= 3) {
+      return 'sightseeing' // 观光游览
+    } else {
+      return 'general' // 综合体验
+    }
+  }
+
+  // 生成包含具体时间地点的描述
+  generateNaturalDescription(analysis, days) {
+    const { destinations, activities, foodExperiences, culturalElements, natureActivities, shoppingExperiences, tripStyle, keyHighlights } = analysis
+    
+    // 如果没有足够的详细行程信息，回退到简洁描述
+    if (!analysis.detailedSchedule || analysis.detailedSchedule.length === 0) {
+      return this.generateSimpleDescription(analysis, days)
+    }
+
+    // 生成包含具体时间地点的详细描述
+    let description = `为您精心安排的${days}天行程，具体安排如下：\n\n`
+    
+    // 按天生成描述
+    analysis.detailedSchedule.slice(0, days).forEach((daySchedule, index) => {
+      const dayNum = index + 1
+      description += `第${dayNum}天：\n`
+      
+      // 按时间段组织描述
+      if (daySchedule.morning && daySchedule.morning.length > 0) {
+        description += `上午前往${daySchedule.morning.join('、')}参观游览；\n`
+      }
+      
+      if (daySchedule.noon && daySchedule.noon.length > 0) {
+        description += `中午在${daySchedule.noon.join('、')}享用${daySchedule.noonFood ? daySchedule.noonFood : '当地美食'}；\n`
+      }
+      
+      if (daySchedule.afternoon && daySchedule.afternoon.length > 0) {
+        description += `下午前往${daySchedule.afternoon.join('、')}继续游览；\n`
+      }
+      
+      if (daySchedule.evening && daySchedule.evening.length > 0) {
+        description += `晚上在${daySchedule.evening.join('、')}体验${daySchedule.eveningFood ? daySchedule.eveningFood : '特色活动'}。`
+      }
+      
+      description += '\n'
+    })
+
+    // 添加总结性描述
+    description += this.generateTripSummary(analysis, days)
+    
+    return description
+  }
+
+  // 生成简单描述（回退方案）
+  generateSimpleDescription(analysis, days) {
+    const { destinations, activities, foodExperiences, culturalElements, natureActivities, shoppingExperiences, tripStyle, keyHighlights } = analysis
+    
+    let description = `为您精心安排的${days}天行程，`
+    
+    if (destinations.length > 0) {
+      description += `游览${destinations.slice(0, 2).join('、')}等著名景点，`
+    }
+    
+    if (foodExperiences.length > 0) {
+      description += `品尝${foodExperiences.slice(0, 2).join('、')}等特色美食，`
+    }
+    
+    if (culturalElements.length > 0) {
+      description += `体验丰富的文化活动，`
+    }
+    
+    description += '享受精彩的旅行体验。'
+    
+    return description
+  }
+
+  // 生成行程总结
+  generateTripSummary(analysis, days) {
+    let summary = `这个行程精心安排了${days}天的丰富内容，`
+    
+    if (analysis.destinations.length > 2) {
+      summary += `涵盖了${analysis.destinations.slice(0, 3).join('、')}等主要景点，`
+    }
+    
+    if (analysis.foodExperiences.length > 0) {
+      summary += `品尝多种地方美食，`
+    }
+    
+    if (analysis.culturalElements.length > 0) {
+      summary += `深入体验当地文化，`
+    }
+    
+    summary += '让您充分感受旅行的乐趣和意义。'
+    
+    return summary
+  }
+
+  // 解析景点推荐
+  parseDestinationRecommendations(aiResponse) {
+    // 解析AI推荐的景点列表
+    return {
+      destinations: [], // 解析后的景点列表
+      summary: aiResponse.substring(0, 200) + '...', // 摘要
+      fullResponse: aiResponse
+    }
+  }
+
+  // 解析路线数据
+  parseAIRouteToData(aiResponse, theme) {
+    return {
+      title: theme + '主题路线',
+      description: aiResponse.substring(0, 500),
+      itinerary: aiResponse,
+      tags: [theme, 'AI生成'],
+      difficulty_level: 2,
+      price_range: '待定',
+      duration: '待定'
+    }
+  }
+
+  // 解析个性化推荐
+  parsePersonalizedRecommendations(aiResponse) {
+    return {
+      destinations: [],
+      routes: [],
+      tips: [],
+      fullResponse: aiResponse
+    }
+  }
+
+  // 解析景点描述
+  parseDestinationDescription(aiResponse) {
+    return {
+      short: aiResponse.substring(0, 200),
+      full: aiResponse,
+      tags: ['热门推荐']
+    }
+  }
+
+  // 辅助提取方法
+  extractTitle(text) {
+    const match = text.match(/标题[:：](.+?)(?:\n|$)/)
+    return match ? match[1].trim() : 'AI生成行程'
+  }
+
+  extractDescription(text) {
+    const lines = text.split('\n').filter(line => line.trim())
+    return lines.slice(0, 3).join(' ').substring(0, 200)
+  }
+
+  extractDestination(text) {
+    const match = text.match(/目的地[:：](.+?)(?:\n|$)/)
+    return match ? match[1].trim() : '待定'
+  }
+
+  extractBudget(text) {
+    // 尝试多种预算匹配模式
+    const patterns = [
+      /总预算[：:]\s*¥?(\d+)/,
+      /预算[：:]\s*¥?(\d+)/,
+      /总计[：:]\s*¥?(\d+)/,
+      /费用[：:]\s*¥?(\d+)/,
+      /¥(\d+)/
+    ]
+    
+    for (const pattern of patterns) {
+      const match = text.match(pattern)
+      if (match) {
+        const budget = parseInt(match[1])
+        // 验证预算合理性（100-100000之间）
+        if (budget >= 100 && budget <= 100000) {
+          return budget
+        }
+      }
+    }
+    
+    return 3000 // 默认预算
+  }
+
+  extractTags(text) {
+    const tags = ['AI规划']
+    if (text.includes('自然')) tags.push('自然风光')
+    if (text.includes('文化')) tags.push('文化历史')
+    if (text.includes('美食')) tags.push('美食')
+    return tags
+  }
+
+  extractTransportation(text) {
+    if (text.includes('飞机')) return '飞机'
+    if (text.includes('高铁')) return '高铁'
+    if (text.includes('自驾')) return '自驾'
+    return '待定'
+  }
+
+  extractAccommodation(text) {
+    if (text.includes('酒店')) return '酒店'
+    if (text.includes('民宿')) return '民宿'
+    if (text.includes('青年旅社')) return '青年旅社'
+    return '待定'
+  }
+
+  // 规范化行程：将自由文本转换为结构化JSON，包含按天的items
+  normalizeItinerary(aiResponse, totalDays, startDate) {
+    const days = []
+    const text = (aiResponse || '').trim()
+
+    // 尝试按 Day X - YYYY-MM-DD 或 Day X: 分段
+    const detailPattern = /Day\s*(\d+)\s*[-—]?\s*(?:([\d]{4}-[\d]{2}-[\d]{2}))?\s*[:：]?\s*([\s\S]*?)(?=\n?Day\s*\d+|$)/gi
+    let match
+    const segments = []
+    while ((match = detailPattern.exec(text)) !== null) {
+      segments.push({
+        day: parseInt(match[1]),
+        date: match[2] || null,
+        content: (match[3] || '').trim()
+      })
+    }
+
+    const chinesePattern = /第([一二三四五六七八九十\d]+)天[\s:：]?([\s\S]*?)(?=\n?第[一二三四五六七八九十\d]+天|$)/gi
+    if (segments.length === 0) {
+      while ((match = chinesePattern.exec(text)) !== null) {
+        segments.push({
+          day: this.chineseToNumber(match[1]),
+          date: null,
+          content: (match[2] || '').trim()
+        })
+      }
+    }
+
+    const calcDate = (offset) => {
+      if (!startDate) return ''
+      const d = new Date(startDate)
+      d.setDate(d.getDate() + offset)
+      const yyyy = d.getFullYear()
+      const mm = String(d.getMonth() + 1).padStart(2, '0')
+      const dd = String(d.getDate()).padStart(2, '0')
+      return `${yyyy}-${mm}-${dd}`
+    }
+
+    const extractLines = (content) => {
+      const lines = (content || '').split('\n').map(l => l.trim()).filter(Boolean)
+      const items = []
+      const timeRegex = /(上午|下午|晚上|早餐|午餐|晚餐|\d{1,2}[:：]\d{2}(?:\s*[-–—]\s*\d{1,2}[:：]\d{2})?)/
+      lines.forEach(line => {
+        const m = line.match(timeRegex)
+        const time = m ? m[0] : '全天'
+        const title = line.replace(/^[-•\s]+/, '')
+        if (title.length > 2) {
+          items.push({ time, title })
+        }
+      })
+      // 若未能抽取行，则用整段作为一个活动
+      if (items.length === 0 && (content || '').length > 0) {
+        items.push({ time: '全天', title: content.substring(0, 120) })
+      }
+      return items
+    }
+
+    if (segments.length > 0) {
+      for (let i = 0; i < Math.max(segments.length, totalDays); i++) {
+        const seg = segments[i] || { day: i + 1, content: '' }
+        days.push({
+          day: i + 1,
+          date: seg.date || calcDate(i),
+          items: extractLines(seg.content)
+        })
+      }
+    } else {
+      // 无明显分段：均分到 totalDays，每天给出上午/下午/晚上三个条目
+      const blocks = text.split(/\n\n+/)
+      for (let i = 0; i < totalDays; i++) {
+        const b1 = blocks[i * 3] || ''
+        const b2 = blocks[i * 3 + 1] || ''
+        const b3 = blocks[i * 3 + 2] || ''
+        const items = []
+        if (b1) items.push({ time: '上午', title: b1.substring(0, 80) })
+        if (b2) items.push({ time: '下午', title: b2.substring(0, 80) })
+        if (b3) items.push({ time: '晚上', title: b3.substring(0, 80) })
+        if (items.length === 0 && text) items.push({ time: '全天', title: text.substring(0, 120) })
+        days.push({ day: i + 1, date: calcDate(i), items })
+      }
+    }
+
+    return { days }
+  }
+}
+
+// 创建AI集成实例
+const aiIntegration = new AIIntegration()
+
+module.exports = { aiIntegration, AIIntegration }

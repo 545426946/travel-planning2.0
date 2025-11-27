@@ -1,0 +1,92 @@
+<!-- AI规划调试页面 -->
+<view class="container">
+  <view class="header">
+    <text class="title">🔍 AI规划调试页面</text>
+    <text class="subtitle">用于排查保存问题</text>
+  </view>
+
+  <!-- 快速操作 -->
+  <view class="quick-actions">
+    <button class="debug-btn" bindtap="fillTestData">📝 填充测试数据</button>
+    <button class="debug-btn" bindtap="testAIOnly">🤖 仅测试AI生成</button>
+  </view>
+
+  <!-- 表单区域 -->
+  <view class="form-section">
+    <view class="form-group">
+      <text class="label">目的地</text>
+      <input class="input" placeholder="请输入目的地" 
+             data-field="destination" 
+             value="{{formData.destination}}" 
+             bindinput="onInput" />
+    </view>
+
+    <view class="form-group">
+      <text class="label">旅行天数</text>
+      <picker mode="selector" range="{{dayOptions}}" value="{{formData.daysIndex}}" 
+              bindchange="onDayChange">
+        <view class="picker">{{formData.days || '请选择天数'}}</view>
+      </picker>
+    </view>
+
+    <view class="form-group">
+      <text class="label">出行人数</text>
+      <input class="input" type="number" placeholder="请输入人数" 
+             data-field="travelers" 
+             value="{{formData.travelers}}" 
+             bindinput="onInput" />
+    </view>
+
+    <view class="form-group">
+      <text class="label">预算(元)</text>
+      <input class="input" type="digit" placeholder="请输入预算" 
+             data-field="budget" 
+             value="{{formData.budget}}" 
+             bindinput="onInput" />
+    </view>
+
+    <view class="form-group">
+      <text class="label">旅行风格</text>
+      <radio-group class="radio-group" bindchange="onStyleChange">
+        <label wx:for="{{styles}}" wx:key="value" class="radio-item">
+          <radio value="{{item.value}}" checked="{{formData.style === item.value}}" />
+          <text>{{item.label}}</text>
+        </label>
+      </radio-group>
+    </view>
+
+    <view class="form-group">
+      <text class="label">兴趣偏好</text>
+      <view class="interests">
+        <label wx:for="{{interests}}" wx:key="value" wx:for-index="index" 
+               class="interest-item" bindtap="onInterestToggle" data-index="{{index}}">
+          <checkbox checked="{{item.checked}}" />
+          <text>{{item.label}}</text>
+        </label>
+      </view>
+    </view>
+
+    <view class="form-group">
+      <text class="label">特殊要求</text>
+      <textarea class="textarea" placeholder="请输入特殊要求" 
+                data-field="specialRequirements" 
+                value="{{formData.specialRequirements}}" 
+                bindinput="onInput" />
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="actions">
+    <button class="btn btn-cancel" bindtap="goBack">返回</button>
+    <button class="btn btn-primary" loading="{{isLoading}}" bindtap="testAIOnly">
+      {{isLoading ? '生成中...' : '🤖 测试AI生成'}}
+    </button>
+  </view>
+
+  <!-- 加载状态 -->
+  <view wx:if="{{isLoading}}" class="loading-overlay">
+    <view class="loading-content">
+      <text class="loading-text">正在处理中...</text>
+    </view>
+  </view>
+</view>

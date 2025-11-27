@@ -1,0 +1,241 @@
+<view class="container">
+  <view class="page-header">
+    <text class="page-title">{{isEdit ? '编辑行程' : '创建行程'}}</text>
+    <text class="page-subtitle">规划你的完美旅程</text>
+  </view>
+
+  <view class="form-container">
+    <!-- 行程标题 -->
+    <view class="form-section">
+      <view class="form-label required">
+        <text>行程标题</text>
+      </view>
+      <input 
+        class="form-input {{errors.title ? 'error' : ''}}"
+        placeholder="给你的旅行起个名字"
+        value="{{formData.title}}"
+        data-field="title"
+        bindinput="onInputChange"
+        maxlength="50"
+      />
+      <view wx:if="{{errors.title}}" class="error-text">{{errors.title}}</view>
+    </view>
+
+    <!-- 目的地 -->
+    <view class="form-section">
+      <view class="form-label required">
+        <text>目的地</text>
+      </view>
+      <input 
+        class="form-input {{errors.destination ? 'error' : ''}}"
+        placeholder="例如：北京、云南大理"
+        value="{{formData.destination}}"
+        data-field="destination"
+        bindinput="onInputChange"
+        maxlength="30"
+      />
+      <view wx:if="{{errors.destination}}" class="error-text">{{errors.destination}}</view>
+    </view>
+
+    <!-- 日期选择 -->
+    <view class="form-section">
+      <view class="form-label required">
+        <text>出行日期</text>
+      </view>
+      <view class="date-row">
+        <view class="date-picker">
+          <text class="date-label">开始</text>
+          <picker 
+            mode="date" 
+            value="{{formData.startDate}}"
+            start="{{minDate}}"
+            data-field="startDate"
+            bindchange="onDateChange"
+          >
+            <view class="picker-value {{errors.startDate ? 'error' : ''}}">
+              {{formData.startDate || '选择日期'}}
+            </view>
+          </picker>
+        </view>
+        
+        <text class="date-separator">至</text>
+        
+        <view class="date-picker">
+          <text class="date-label">结束</text>
+          <picker 
+            mode="date" 
+            value="{{formData.endDate}}"
+            start="{{formData.startDate || minDate}}"
+            data-field="endDate"
+            bindchange="onDateChange"
+          >
+            <view class="picker-value {{errors.endDate ? 'error' : ''}}">
+              {{formData.endDate || '选择日期'}}
+            </view>
+          </picker>
+        </view>
+      </view>
+      <view wx:if="{{errors.startDate || errors.endDate}}" class="error-text">
+        {{errors.startDate || errors.endDate}}
+      </view>
+    </view>
+
+    <!-- 出行人数 -->
+    <view class="form-section">
+      <view class="form-label">
+        <text>出行人数</text>
+      </view>
+      <view class="number-input">
+        <text class="number-label">{{formData.travelers}}人</text>
+        <slider 
+          value="{{formData.travelers}}"
+          min="1"
+          max="20"
+          step="1"
+          show-value
+          bindchange="onTravelersChange"
+          activeColor="#4A90E2"
+        />
+      </view>
+    </view>
+
+    <!-- 预算 -->
+    <view class="form-section">
+      <view class="form-label required">
+        <text>预算（元）</text>
+      </view>
+      <input 
+        class="form-input {{errors.budget ? 'error' : ''}}"
+        type="digit"
+        placeholder="预计总预算"
+        value="{{formData.budget}}"
+        data-field="budget"
+        bindinput="onInputChange"
+      />
+      <view wx:if="{{errors.budget}}" class="error-text">{{errors.budget}}</view>
+    </view>
+
+    <!-- 旅行风格 -->
+    <view class="form-section">
+      <view class="form-label">
+        <text>旅行风格</text>
+      </view>
+      <picker 
+        mode="selector"
+        range="{{styleOptions}}"
+        range-key="label"
+        value="{{selectedStyleIndex}}"
+        bindchange="onStyleChange"
+      >
+        <view class="picker-display">
+          <text>{{styleOptions[selectedStyleIndex].label}}</text>
+          <text class="arrow">▼</text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 标签 -->
+    <view class="form-section">
+      <view class="form-label">
+        <text>行程标签</text>
+      </view>
+      <view class="tags-selector">
+        <view 
+          wx:for="{{commonTags}}" 
+          wx:key="index"
+          class="tag-item {{formData.tags.includes(item) ? 'selected' : ''}}"
+          data-tag="{{item}}"
+          bindtap="toggleTag"
+        >
+          <text>{{item}}</text>
+        </view>
+        <view class="tag-item add-tag" bindtap="addCustomTag">
+          <text>+ 自定义</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 行程描述 -->
+    <view class="form-section">
+      <view class="form-label">
+        <text>行程描述</text>
+      </view>
+      <textarea 
+        class="form-textarea"
+        placeholder="简单描述一下这次旅行的计划..."
+        value="{{formData.description}}"
+        data-field="description"
+        bindinput="onInputChange"
+        maxlength="500"
+        auto-height
+      />
+    </view>
+
+    <!-- 交通方式 -->
+    <view class="form-section">
+      <view class="form-label">
+        <text>交通方式</text>
+      </view>
+      <input 
+        class="form-input"
+        placeholder="例如：高铁、飞机、自驾"
+        value="{{formData.transportation}}"
+        data-field="transportation"
+        bindinput="onInputChange"
+        maxlength="50"
+      />
+    </view>
+
+    <!-- 住宿安排 -->
+    <view class="form-section">
+      <view class="form-label">
+        <text>住宿安排</text>
+      </view>
+      <input 
+        class="form-input"
+        placeholder="例如：酒店、民宿"
+        value="{{formData.accommodation}}"
+        data-field="accommodation"
+        bindinput="onInputChange"
+        maxlength="50"
+      />
+    </view>
+
+    <!-- 特殊要求 -->
+    <view class="form-section">
+      <view class="form-label">
+        <text>特殊要求</text>
+      </view>
+      <textarea 
+        class="form-textarea"
+        placeholder="有什么特殊需求或注意事项吗？"
+        value="{{formData.specialRequirements}}"
+        data-field="specialRequirements"
+        bindinput="onInputChange"
+        maxlength="300"
+        auto-height
+      />
+    </view>
+
+    <!-- 提交按钮 -->
+    <view class="form-actions">
+      <button 
+        class="submit-btn"
+        bindtap="submitForm"
+        disabled="{{submitting}}"
+        loading="{{submitting}}"
+      >
+        <text>{{isEdit ? '保存修改' : '创建行程'}}</text>
+      </button>
+      
+      <button 
+        wx:if="{{!isEdit}}"
+        class="reset-btn"
+        bindtap="resetForm"
+        disabled="{{submitting}}"
+      >
+        <text>重置表单</text>
+      </button>
+    </view>
+  </view>
+</view>

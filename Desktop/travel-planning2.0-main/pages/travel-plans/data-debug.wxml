@@ -1,0 +1,112 @@
+<!-- 数据调试页面 -->
+<view class="container">
+  <view class="header">
+    <text class="title">🔍 数据调试工具</text>
+    <text class="subtitle">排查"数据遗失"问题</text>
+  </view>
+
+  <!-- 用户信息 -->
+  <view class="section">
+    <view class="section-title">🔐 用户状态</view>
+    <view class="info-grid">
+      <view class="info-item">
+        <text class="label">登录状态:</text>
+        <text class="value {{debugData.userChecked ? 'success' : 'error'}}">
+          {{debugData.userChecked ? '✅ 已登录' : '❌ 未登录'}}
+        </text>
+      </view>
+      <view class="info-item">
+        <text class="label">用户ID:</text>
+        <text class="value">{{userId || '未获取'}}</text>
+      </view>
+      <view class="info-item" wx:if="{{userInfo}}">
+        <text class="label">用户名:</text>
+        <text class="value">{{userInfo.username}}</text>
+      </view>
+    </view>
+    <view class="actions" wx:if="{{userId}}">
+      <button class="btn btn-small" bindtap="copyUserId">📋 复制用户ID</button>
+    </view>
+  </view>
+
+  <!-- 数据库状态 -->
+  <view class="section">
+    <view class="section-title">🗄️ 数据库状态</view>
+    <view class="info-grid">
+      <view class="info-item">
+        <text class="label">连接状态:</text>
+        <text class="value {{debugData.dbConnected ? 'success' : 'error'}}">
+          {{debugData.dbConnected ? '✅ 正常' : '❌ 异常'}}
+        </text>
+      </view>
+      <view class="info-item">
+        <text class="label">行程数量:</text>
+        <text class="value">{{debugData.totalPlans}} 条</text>
+      </view>
+      <view class="info-item">
+        <text class="label">数据存在:</text>
+        <text class="value {{debugData.plansExist ? 'success' : 'error'}}">
+          {{debugData.plansExist ? '✅ 有数据' : '❌ 无数据'}}
+        </text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 行程详情 -->
+  <view class="section" wx:if="{{debugData.planDetails.length > 0}}">
+    <view class="section-title">📋 行程详情</view>
+    <view class="plan-list">
+      <view class="plan-item" wx:for="{{debugData.planDetails}}" wx:key="id">
+        <view class="plan-header">
+          <text class="plan-title">{{item.title}}</text>
+          <text class="plan-status">{{item.status}}</text>
+        </view>
+        <view class="plan-info">
+          <text class="plan-dest">📍 {{item.destination}}</text>
+          <text class="plan-date">📅 {{item.start_date}} - {{item.end_date}}</text>
+          <text class="plan-budget">💰 ¥{{item.total_budget}}</text>
+        </view>
+        <view class="plan-meta">
+          <text class="plan-days">{{item.total_days}}天</text>
+          <text class="plan-travelers">{{item.travelers_count}}人</text>
+          <text class="plan-ai" wx:if="{{item.is_ai_generated}}">🤖 AI生成</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="actions">
+    <button class="btn btn-primary" bindtap="runFullDebug" loading="{{isLoading}}">
+      {{isLoading ? '检查中...' : '🔄 重新检查'}}
+    </button>
+    <button class="btn btn-success" bindtap="createTestData" wx:if="{{debugData.userChecked}}">
+      🆕 创建测试数据
+    </button>
+    <button class="btn btn-warning" bindtap="cleanTestData" wx:if="{{debugData.plansExist}}">
+      🗑️ 清理测试数据
+    </button>
+    <button class="btn btn-cancel" bindtap="goBack">
+      返回
+    </button>
+  </view>
+
+  <!-- 控制台说明 -->
+  <view class="tips">
+    <view class="tips-title">💡 调试提示</view>
+    <view class="tips-content">
+      1. 查看开发者工具控制台的详细日志
+      2. 如果用户ID为空，请重新登录
+      3. 如果数据库连接异常，检查域名白名单配置
+      4. 如果无数据，可以创建测试数据进行验证
+      5. 复制用户ID可以在数据库控制台手动查询
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view wx:if="{{isLoading}}" class="loading-overlay">
+    <view class="loading-content">
+      <text class="loading-text">正在检查数据...</text>
+    </view>
+  </view>
+</view>

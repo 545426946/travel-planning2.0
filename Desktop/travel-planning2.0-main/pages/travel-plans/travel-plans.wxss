@@ -1,0 +1,284 @@
+/* 页面容器 */
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg,rgb(119, 129, 179) 0%,rgb(130, 128, 168) 100%);
+  padding-bottom: 40rpx;
+}
+
+/* 页面标题 */
+.page-header {
+  padding: 60rpx 40rpx 40rpx;
+  color: white;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.page-title {
+  font-size: 56rpx;
+  font-weight: bold;
+}
+
+.page-subtitle {
+  font-size: 28rpx;
+  opacity: 0.9;
+}
+
+/* 创建行程按钮 */
+.create-section {
+  display: flex;
+  gap: 20rpx;
+  padding: 0 40rpx 30rpx;
+}
+
+.create-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  height: 100rpx;
+  border-radius: 24rpx;
+  border: none;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: white;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15);
+}
+
+.create-btn.manual {
+  color:rgb(72, 75, 95);
+  background: linear-gradient(135deg,rgb(198, 193, 170) 0%,rgb(211, 219, 192) 100%);
+}
+
+.create-btn.ai {
+  color:rgb(72, 75, 95);
+  background: linear-gradient(135deg,rgb(208, 204, 220) 0%,rgb(189, 180, 205) 100%);
+}
+
+.btn-icon {
+  font-size: 36rpx;
+}
+
+/* 筛选栏 */
+.filter-bar {
+  display: flex;
+  gap: 20rpx;
+  padding: 0 40rpx 30rpx;
+}
+
+.filter-item {
+  flex: 1;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 32rpx;
+  font-size: 26rpx;
+  color: white;
+  transition: all 0.3s;
+}
+
+.filter-item.active {
+  background: white;
+  color: #667eea;
+  font-weight: 600;
+}
+
+/* 行程列表区域 */
+.plans-section {
+  background: #F5F7FA;
+  border-radius: 40rpx 40rpx 0 0;
+  padding: 40rpx;
+  min-height: 60vh;
+}
+
+.section-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 30rpx;
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 120rpx 0;
+  font-size: 28rpx;
+  color: #999;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120rpx 0;
+  gap: 20rpx;
+}
+
+.empty-icon {
+  font-size: 120rpx;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  color: #666;
+  font-weight: 600;
+}
+
+.empty-hint {
+  font-size: 26rpx;
+  color: #999;
+}
+
+/* 行程列表 */
+.plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 30rpx;
+}
+
+/* 行程卡片 */
+.plan-card {
+  background: white;
+  border-radius: 24rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+
+.plan-image {
+  width: 100%;
+  height: 360rpx;
+  object-fit: cover;
+}
+
+.ai-badge {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  background: linear-gradient(135deg,rgb(136, 125, 163) 0%,rgb(144, 133, 164) 100%);
+  color: white;
+  padding: 12rpx 24rpx;
+  border-radius: 30rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  box-shadow: 0 4rpx 12rpx rgba(139, 92, 246, 0.3);
+}
+
+.plan-info {
+  padding: 30rpx;
+}
+
+.plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16rpx;
+}
+
+.plan-title {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #333;
+  flex: 1;
+  margin-right: 20rpx;
+}
+
+.plan-status {
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  color: white;
+  white-space: nowrap;
+}
+
+.plan-description {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 20rpx;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* 行程元数据 */
+.plan-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: #666;
+}
+
+.meta-icon {
+  font-size: 28rpx;
+}
+
+/* 标签 */
+.plan-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+
+.tag {
+  padding: 8rpx 20rpx;
+  background: #F0F4FF;
+  color: #4A90E2;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+}
+
+/* 操作按钮 */
+.plan-actions {
+  display: flex;
+  gap: 12rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #F0F0F0;
+}
+
+.action-btn {
+  flex: 1;
+  height: 72rpx;
+  border-radius: 36rpx;
+  border: none;
+  font-size: 26rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn.view {
+  background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+  color: white;
+}
+
+.action-btn.edit {
+  background: linear-gradient(135deg, #50C878 0%, #3FA662 100%);
+  color: white;
+}
+
+.action-btn.more {
+  background: #F5F7FA;
+  color: #666;
+  border: 1rpx solid #E0E0E0;
+}

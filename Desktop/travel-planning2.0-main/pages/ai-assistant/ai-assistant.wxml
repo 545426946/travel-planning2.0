@@ -1,0 +1,132 @@
+<view class="container">
+  <!-- 顶部导航 -->
+  <view class="header">
+    <text class="title">AI 旅行助手</text>
+    <text class="subtitle">让AI为您的旅行规划提供智能建议</text>
+  </view>
+
+  <!-- Tab切换 -->
+  <view class="tab-bar">
+    <view class="tab-item {{currentTab === 0 ? 'active' : ''}}" bindtap="switchTab" data-index="0">
+      <text class="tab-text">智能对话</text>
+    </view>
+    <view class="tab-item {{currentTab === 1 ? 'active' : ''}}" bindtap="switchTab" data-index="1">
+      <text class="tab-text">AI功能</text>
+    </view>
+  </view>
+
+  <!-- 智能对话 -->
+  <scroll-view wx:if="{{currentTab === 0}}" class="chat-container" scroll-y scroll-into-view="{{scrollToView}}">
+    <!-- 聊天记录 -->
+    <view class="chat-history">
+      <view wx:for="{{chatHistory}}" wx:key="index" class="message-item {{item.type}}">
+        <view class="message-content {{item.type}}">
+          <text class="message-text">{{item.content}}</text>
+          <text class="message-time">{{item.timestamp}}</text>
+        </view>
+      </view>
+      
+      <!-- 加载状态 -->
+      <view wx:if="{{isLoading}}" class="message-item ai">
+        <view class="message-content ai">
+          <view class="loading-dots">
+            <view class="dot"></view>
+            <view class="dot"></view>
+            <view class="dot"></view>
+          </view>
+          <text class="typing-text">AI正在思考中</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 快速问题 -->
+    <view wx:if="{{chatHistory.length === 0}}" class="quick-questions">
+      <text class="quick-title">快速提问：</text>
+      <view class="question-list">
+        <view wx:for="{{quickQuestions}}" wx:key="index" class="question-item" bindtap="quickQuestion" data-question="{{item}}">
+          <text class="question-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- AI功能 -->
+  <scroll-view wx:if="{{currentTab === 1}}" class="features-container" scroll-y>
+    <view class="feature-list">
+      <view class="feature-card" bindtap="planItinerary">
+        <view class="feature-icon">🗺️</view>
+        <view class="feature-info">
+          <text class="feature-title">智能行程规划</text>
+          <text class="feature-desc">根据您的需求制定详细旅行计划</text>
+        </view>
+        <view class="feature-arrow">→</view>
+      </view>
+
+      <view class="feature-card" bindtap="getRecommendations">
+        <view class="feature-icon">🎯</view>
+        <view class="feature-info">
+          <text class="feature-title">个性化推荐</text>
+          <text class="feature-desc">基于您的喜好推荐合适的景点</text>
+        </view>
+        <view class="feature-arrow">→</view>
+      </view>
+
+      <view class="feature-card disabled">
+        <view class="feature-icon">🌤️</view>
+        <view class="feature-info">
+          <text class="feature-title">天气查询</text>
+          <text class="feature-desc">获取目的地天气信息和出行建议</text>
+        </view>
+        <view class="feature-arrow">→</view>
+        <view class="feature-badge">开发中</view>
+      </view>
+
+      <view class="feature-card disabled">
+        <view class="feature-icon">💰</view>
+        <view class="feature-info">
+          <text class="feature-title">预算估算</text>
+          <text class="feature-desc">智能分析旅行费用和预算建议</text>
+        </view>
+        <view class="feature-arrow">→</view>
+        <view class="feature-badge">开发中</view>
+      </view>
+
+      <view class="feature-card disabled">
+        <view class="feature-icon">📸</view>
+        <view class="feature-info">
+          <text class="feature-title">拍照建议</text>
+          <text class="feature-desc">推荐最佳拍照地点和技巧</text>
+        </view>
+        <view class="feature-arrow">→</view>
+        <view class="feature-badge">开发中</view>
+      </view>
+    </view>
+
+    <view class="ai-info">
+      <view class="info-card">
+        <text class="info-title">关于AI助手</text>
+        <text class="info-text">基于Mistral AI技术，为您提供专业的旅行建议和个性化服务。</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部输入框（对话模式） -->
+  <view wx:if="{{currentTab === 0}}" class="input-container">
+    <view class="input-wrapper">
+      <input 
+        class="message-input" 
+        placeholder="请输入您的问题" 
+        value="{{inputValue}}"
+        bindinput="onInput"
+        bindconfirm="sendMessage"
+        maxlength="500"
+      />
+      <button wx:if="{{inputValue.trim()}}" class="send-btn" bindtap="sendMessage">发送</button>
+      <button wx:else class="send-btn disabled" disabled>发送</button>
+    </view>
+    
+    <view class="action-buttons">
+      <button class="action-btn" bindtap="clearChat">清空对话</button>
+    </view>
+  </view>
+</view>

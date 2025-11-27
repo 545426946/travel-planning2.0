@@ -1,0 +1,134 @@
+<!-- pages/ai-plan/ai-plan.wxml -->
+<view class="container">
+  <!-- 顶部标题栏 -->
+  <view class="header">
+    <view class="header-title">AI智能行程规划</view>
+    <view class="header-subtitle">让AI为您定制专属旅行方案</view>
+  </view>
+
+  <!-- 表单内容 -->
+  <scroll-view scroll-y class="form-container">
+    <!-- 目的地 -->
+    <view class="form-section">
+      <view class="form-label">
+        <text class="required">*</text>
+        <text>目的地</text>
+      </view>
+      <input 
+        class="form-input" 
+        placeholder="例如：北京、上海、杭州" 
+        value="{{formData.destination}}"
+        bindinput="onDestinationInput"
+      />
+    </view>
+
+    <!-- 旅行天数和出行人数 -->
+    <view class="form-row">
+      <view class="form-section half">
+        <view class="form-label">
+          <text class="required">*</text>
+          <text>旅行天数</text>
+        </view>
+        <picker 
+          mode="selector" 
+          range="{{dayOptions}}" 
+          value="{{formData.daysIndex}}"
+          bindchange="onDaysChange"
+        >
+          <view class="form-picker">
+            <text class="{{formData.days ? 'selected' : 'placeholder'}}">
+              {{formData.days || '请选择'}}
+            </text>
+            <text class="iconfont icon-arrow-down"></text>
+          </view>
+        </picker>
+      </view>
+
+      <view class="form-section half">
+        <view class="form-label">
+          <text class="required">*</text>
+          <text>出行人数</text>
+        </view>
+        <input 
+          class="form-input" 
+          type="number" 
+          placeholder="请输入人数" 
+          value="{{formData.travelers}}"
+          bindinput="onTravelersInput"
+        />
+      </view>
+    </view>
+
+    <!-- 预算 -->
+    <view class="form-section">
+      <view class="form-label">
+        <text class="required">*</text>
+        <text>预算（元）</text>
+      </view>
+      <input 
+        class="form-input" 
+        type="number" 
+        placeholder="请输入预算金额" 
+        value="{{formData.budget}}"
+        bindinput="onBudgetInput"
+      />
+    </view>
+
+    <!-- 兴趣偏好 -->
+    <view class="form-section">
+      <view class="form-label">兴趣偏好</view>
+      <view class="checkbox-group">
+        <view 
+          wx:for="{{interests}}" 
+          wx:key="value"
+          class="checkbox-item {{item.checked ? 'checked' : ''}}"
+          bindtap="onInterestTap"
+          data-index="{{index}}"
+        >
+          <text class="checkbox-icon">{{item.checked ? '✓' : ''}}</text>
+          <text>{{item.label}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 旅行风格 -->
+    <view class="form-section">
+      <view class="form-label">旅行风格</view>
+      <view class="radio-group">
+        <view 
+          wx:for="{{styles}}" 
+          wx:key="value"
+          class="radio-item {{formData.style === item.value ? 'active' : ''}}"
+          bindtap="onStyleTap"
+          data-value="{{item.value}}"
+        >
+          <view class="radio-icon">
+            <view class="radio-dot" wx:if="{{formData.style === item.value}}"></view>
+          </view>
+          <text>{{item.label}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 特殊要求 -->
+    <view class="form-section">
+      <view class="form-label">特殊要求</view>
+      <textarea 
+        class="form-textarea" 
+        placeholder="例如：带老人出游、饮食禁忌、特殊需求等"
+        value="{{formData.specialRequirements}}"
+        bindinput="onSpecialRequirementsInput"
+        maxlength="200"
+      />
+      <view class="textarea-counter">{{formData.specialRequirements.length}}/200</view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部按钮 -->
+  <view class="footer">
+    <button class="btn-cancel" bindtap="onCancel">取消</button>
+    <button class="btn-submit" bindtap="onSubmit" loading="{{isLoading}}">
+      {{isLoading ? 'AI正在规划中...' : '开始规划'}}
+    </button>
+  </view>
+</view>
