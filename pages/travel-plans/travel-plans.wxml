@@ -84,7 +84,7 @@
             </view>
           </view>
 
-          <text class="plan-description" user-select="{{true}}">{{item.description}}</text>
+
 
           <!-- 行程元数据 -->
           <view class="plan-meta">

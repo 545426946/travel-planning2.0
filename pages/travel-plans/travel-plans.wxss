@@ -200,16 +200,7 @@
   white-space: nowrap;
 }
 
-.plan-description {
-  font-size: 26rpx;
-  color: #666;
-  line-height: 1.6;
-  margin-bottom: 20rpx;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-}
+
 
 /* 行程元数据 */
 .plan-meta {
