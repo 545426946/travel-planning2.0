@@ -1,8 +1,0 @@
-{
-  "navigationBarTitleText": "AI旅行助手",
-  "navigationBarBackgroundColor": "#667eea",
-  "navigationBarTextStyle": "white",
-  "backgroundColor": "#f8f9fa",
-  "enablePullDownRefresh": false,
-  "usingComponents": {}
-}

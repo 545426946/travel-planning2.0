@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@babel/runtime": "^7.28.4",
     "@supabase/supabase-js": "^2.84.0"
   }
 }
