@@ -1,0 +1,285 @@
+/* 增强版AI规划页面样式 */
+.container {
+  padding: 20rpx;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30rpx;
+  padding: 30rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16rpx;
+  color: white;
+}
+
+.title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: bold;
+  margin-bottom: 10rpx;
+  text-shadow: 0 2rpx 4rpx rgba(0,0,0,0.1);
+}
+
+.subtitle {
+  font-size: 26rpx;
+  opacity: 0.9;
+}
+
+.form-section {
+  background-color: white;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.1);
+}
+
+.form-group {
+  margin-bottom: 30rpx;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.label {
+  display: block;
+  font-size: 32rpx;
+  color: #333;
+  margin-bottom: 15rpx;
+  font-weight: 600;
+}
+
+.input {
+  width: 100%;
+  height: 88rpx;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 30rpx;
+  background-color: #fafafa;
+  transition: all 0.3s ease;
+}
+
+.input:focus {
+  border-color: #667eea;
+  background-color: white;
+  box-shadow: 0 0 0 4rpx rgba(102, 126, 234, 0.1);
+}
+
+.picker {
+  width: 100%;
+  height: 88rpx;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 30rpx;
+  background-color: #fafafa;
+  line-height: 84rpx;
+  transition: all 0.3s ease;
+}
+
+.textarea {
+  width: 100%;
+  height: 180rpx;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  font-size: 30rpx;
+  background-color: #fafafa;
+  transition: all 0.3s ease;
+}
+
+.textarea:focus {
+  border-color: #667eea;
+  background-color: white;
+  box-shadow: 0 0 0 4rpx rgba(102, 126, 234, 0.1);
+}
+
+.radio-group {
+  display: flex;
+  gap: 30rpx;
+  flex-wrap: wrap;
+}
+
+.radio-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 15rpx 20rpx;
+  background-color: #f8f9fa;
+  border-radius: 25rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.3s ease;
+}
+
+.radio-item:active {
+  transform: scale(0.95);
+}
+
+.radio-item input[type="radio"]:checked + text {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.interests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.interest-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 15rpx 20rpx;
+  background-color: #f0f3ff;
+  border: 2rpx solid #e7f3ff;
+  border-radius: 25rpx;
+  transition: all 0.3s ease;
+}
+
+.interest-item:active {
+  transform: scale(0.95);
+}
+
+.interest-item input[type="checkbox"]:checked + text {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.enhancement-notice {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  border-radius: 16rpx;
+  padding: 25rpx;
+  margin-bottom: 30rpx;
+  color: #333;
+}
+
+.notice-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-bottom: 20rpx;
+  text-align: center;
+}
+
+.notice-content {
+  font-size: 26rpx;
+  line-height: 1.6;
+}
+
+.notice-content text {
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.actions {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.btn {
+  flex: 1;
+  height: 96rpx;
+  border-radius: 16rpx;
+  font-size: 34rpx;
+  font-weight: 600;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.btn:active {
+  transform: scale(0.95);
+}
+
+.btn-cancel {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  border: 2rpx solid #e9ecef;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 6rpx 20rpx rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary[disabled] {
+  background: #ccc;
+  box-shadow: none;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-content {
+  background-color: white;
+  padding: 60rpx 40rpx;
+  border-radius: 20rpx;
+  text-align: center;
+  box-shadow: 0 10rpx 30rpx rgba(0,0,0,0.2);
+}
+
+.loading-icon {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+  animation: bounce 1.5s infinite;
+}
+
+.loading-text {
+  font-size: 32rpx;
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 10rpx;
+}
+
+.loading-tip {
+  font-size: 26rpx;
+  color: #666;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10rpx);
+  }
+  60% {
+    transform: translateY(-5rpx);
+  }
+}
+
+/* 响应式适配 */
+@media (max-width: 750rpx) {
+  .container {
+    padding: 15rpx;
+  }
+  
+  .form-section {
+    padding: 20rpx;
+  }
+  
+  .radio-group {
+    gap: 20rpx;
+  }
+  
+  .interests {
+    gap: 15rpx;
+  }
+}

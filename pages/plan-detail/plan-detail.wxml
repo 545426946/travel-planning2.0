@@ -1,0 +1,201 @@
+<view class="container">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 行程详情 -->
+  <view wx:else class="plan-detail">
+    <!-- 返回按钮 -->
+    <view class="back-button" bindtap="navigateBack">
+      <text>← 返回行程列表</text>
+    </view>
+
+    <!-- 头部信息 -->
+    <view class="plan-header">
+      <image class="header-image" src="{{plan.image}}" mode="aspectFill" />
+      
+      <view class="header-overlay">
+        <view class="header-content">
+          <text class="plan-title">{{plan.title}}</text>
+          
+          <view class="plan-badges">
+            <view wx:if="{{plan.isAIGenerated}}" class="badge ai-badge">
+              <text>🤖 AI生成</text>
+            </view>
+            <view class="badge status-badge">
+              <text>{{getStatusText(plan.status)}}</text>
+            </view>
+          </view>
+
+          <view class="plan-meta">
+            <view class="meta-row">
+              <view class="meta-item">
+                <text class="icon">📅</text>
+                <text>行程天数：{{plan.totalDays}}天</text>
+              </view>
+              <view class="meta-item">
+                <text class="icon">👥</text>
+                <text>出行人数：{{plan.travelers}}人</text>
+              </view>
+            </view>
+            <view class="meta-row">
+              <view class="meta-item">
+                <text class="icon">💰</text>
+                <text>预算：¥{{plan.budget}}</text>
+              </view>
+              <view class="meta-item">
+                <text class="icon">📍</text>
+                <text>目的地：{{plan.destination}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-bar">
+      <button class="action-btn" bindtap="editPlan">
+        <text class="icon">✏️</text>
+        <text>编辑</text>
+      </button>
+      <button class="action-btn" bindtap="changeStatus">
+        <text class="icon">🔄</text>
+        <text>状态</text>
+      </button>
+      <button class="action-btn" bindtap="duplicatePlan">
+        <text class="icon">📋</text>
+        <text>复制</text>
+      </button>
+      <button class="action-btn" bindtap="showMoreActions">
+        <text class="icon">⋯</text>
+        <text>更多</text>
+      </button>
+    </view>
+
+    <!-- 行程安排 -->
+    <view class="itinerary-section">
+      <view class="section-title">行程安排</view>
+      
+      <!-- 日期选择器 -->
+      <scroll-view class="day-selector" scroll-x>
+        <view class="day-tabs">
+          <view wx:for="{{dailyItinerary}}" 
+                wx:key="day"
+                class="day-tab {{selectedDay === item.day ? 'active' : ''}}"
+                bindtap="selectDay"
+                data-day="{{item.day}}">
+            <text class="day-label">第{{item.day}}天</text>
+          </view>
+        </view>
+      </scroll-view>
+
+      <!-- 每日详情 -->
+      <view class="daily-content" wx:if="{{dailyItinerary[selectedDay - 1]}}">
+        <!-- 当天行程描述 -->
+        <view wx:if="{{currentDayDescription}}" class="day-description-card">
+          <view class="day-description-header">
+            <text class="day-description-title">第{{selectedDay}}天行程亮点</text>
+          </view>
+          <view class="day-description-content">
+            <text>{{currentDayDescription}}</text>
+          </view>
+        </view>
+
+        <!-- 详细活动列表 -->
+        <view class="activities-section">
+          <view class="activities-title">详细安排</view>
+          <view wx:if="{{dailyItinerary[selectedDay - 1].activities && dailyItinerary[selectedDay - 1].activities.length > 0}}" class="activities-list">
+            <view wx:for="{{dailyItinerary[selectedDay - 1].activities}}" 
+                  wx:key="index" 
+                  wx:for-item="activity"
+                  class="activity-card">
+              <view class="activity-time-bar">
+                <text class="time-label">{{activity.time}}</text>
+              </view>
+              <view class="activity-content">
+                <view class="activity-header">
+                  <text class="activity-title">{{activity.title}}</text>
+                  <view wx:if="{{activity.price}}" class="activity-price">
+                    <text>¥{{activity.price}}</text>
+                  </view>
+                </view>
+                <view wx:if="{{activity.location}}" class="activity-location">
+                  <text class="icon">📍</text>
+                  <text>{{activity.location}}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+          <view wx:else class="raw-content">
+            <text>{{dailyItinerary[selectedDay - 1].content}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 行程描述 -->
+    <view wx:if="{{plan.description}}" class="description-section">
+      <view class="section-title">行程描述</view>
+      <text class="description-text">{{plan.description}}</text>
+    </view>
+
+    <!-- 旅行风格 -->
+    <view wx:if="{{plan.travelStyle}}" class="info-section">
+      <view class="section-title">旅行风格</view>
+      <view class="info-tag">
+        <text>{{getTravelStyleText(plan.travelStyle)}}</text>
+      </view>
+    </view>
+
+    <!-- 兴趣偏好 -->
+    <view wx:if="{{plan.interests && plan.interests.length > 0}}" class="info-section">
+      <view class="section-title">兴趣偏好</view>
+      <view class="tags-container">
+        <view wx:for="{{plan.interests}}" wx:key="index" class="info-tag">
+          <text>{{item.label || item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 标签 -->
+    <view wx:if="{{plan.tags && plan.tags.length > 0}}" class="info-section">
+      <view class="section-title">行程标签</view>
+      <view class="tags-container">
+        <view wx:for="{{plan.tags}}" wx:key="index" class="info-tag">
+          <text>{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 交通和住宿 -->
+    <view class="logistics-section">
+      <view wx:if="{{plan.transportation}}" class="logistics-item">
+        <view class="section-title">交通方式</view>
+        <text class="logistics-text">{{plan.transportation}}</text>
+      </view>
+      
+      <view wx:if="{{plan.accommodation}}" class="logistics-item">
+        <view class="section-title">住宿安排</view>
+        <text class="logistics-text">{{plan.accommodation}}</text>
+      </view>
+    </view>
+
+    <!-- 特殊要求 -->
+    <view wx:if="{{plan.specialRequirements}}" class="info-section">
+      <view class="section-title">特殊要求</view>
+      <text class="description-text">{{plan.specialRequirements}}</text>
+    </view>
+
+    <!-- 底部操作按钮 -->
+    <view class="bottom-actions">
+      <button class="bottom-btn primary-btn" bindtap="editPlan">
+        <text>编辑行程</text>
+      </button>
+      <button class="bottom-btn secondary-btn" bindtap="showMoreActions">
+        <text>更多操作</text>
+      </button>
+    </view>
+  </view>
+</view>

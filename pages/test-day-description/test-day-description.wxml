@@ -1,0 +1,72 @@
+<view class="container">
+  <!-- 头部 -->
+  <view class="header">
+    <view class="back-button" bindtap="navigateBack">
+      <text>← 返回</text>
+    </view>
+    <text class="title">分天行程描述测试</text>
+  </view>
+
+  <!-- 行程总览描述 -->
+  <view wx:if="{{overviewDescription}}" class="overview-section">
+    <view class="section-title">行程总览</view>
+    <text class="overview-text">{{overviewDescription}}</text>
+  </view>
+
+  <!-- 日期选择器 -->
+  <view class="day-selector">
+    <view class="day-tabs">
+      <view wx:for="{{totalDays}}" 
+            wx:key="*this"
+            class="day-tab {{selectedDay === item ? 'active' : ''}}"
+            bindtap="selectDay"
+            data-day="{{item}}">
+        <text class="day-label">第{{item}}天</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 当天行程描述 -->
+  <view wx:if="{{currentDayDescription}}" class="day-description-card">
+    <view class="day-description-header">
+      <text class="day-description-title">第{{selectedDay}}天行程亮点</text>
+    </view>
+    <view class="day-description-content">
+      <text>{{currentDayDescription}}</text>
+    </view>
+  </view>
+
+  <!-- 详细活动列表 -->
+  <view class="activities-section">
+    <view class="activities-title">详细安排</view>
+    <view wx:for="{{mockItinerary.days[selectedDay - 1].items}}" 
+          wx:key="time" 
+          wx:for-item="activity"
+          class="activity-card">
+      <view class="activity-time-bar">
+        <text class="time-label">{{activity.time}}</text>
+      </view>
+      <view class="activity-content">
+        <view class="activity-title">{{activity.title}}</view>
+        <view class="activity-location">
+          <text class="icon">📍</text>
+          <text>{{activity.location}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 说明 -->
+  <view class="info-section">
+    <view class="info-title">功能说明</view>
+    <text class="info-text">
+      • 点击顶部天数标签可以切换不同天数的行程描述
+    </text>
+    <text class="info-text">
+      • 每天都有独立的行程描述，包含具体的时间地点安排
+    </text>
+    <text class="info-text">
+      • 总览描述会显示所有天数的行程亮点
+    </text>
+  </view>
+</view>

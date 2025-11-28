@@ -1,0 +1,114 @@
+<!-- pages/login/login.wxml -->
+<view class="container">
+  <!-- 顶部装饰 -->
+  <view class="header-decoration">
+    <view class="decoration-circle circle-1"></view>
+    <view class="decoration-circle circle-2"></view>
+  </view>
+
+  <!-- 主要内容区域 -->
+  <view class="main-content">
+    <!-- Logo 和标题 -->
+    <view class="logo-section">
+      <image class="logo" src="/pages/image/logo.png" mode="aspectFit" binderror="onImageError"></image>
+      <text class="app-name">轻松旅行规划</text>
+      <text class="app-slogan">让旅行更简单，让体验更精彩</text>
+    </view>
+
+    
+
+    <!-- 账号密码登录表单 -->
+    <view class="login-form">
+      <!-- 用户名输入 -->
+      <view class="form-group">
+        <view class="input-wrapper {{formErrors.username ? 'error' : ''}}">
+          <text class="input-icon">👤</text>
+          <input 
+            class="form-input" 
+            type="text" 
+            placeholder="用户名/邮箱/手机号"
+            value="{{formData.username}}"
+            bindinput="onInput"
+            data-field="username"
+            maxlength="50"
+          />
+        </view>
+        <text class="error-text" wx:if="{{formErrors.username}}">{{formErrors.username}}</text>
+      </view>
+
+      <!-- 密码输入 -->
+      <view class="form-group">
+        <view class="input-wrapper {{formErrors.password ? 'error' : ''}}">
+          <text class="input-icon">🔒</text>
+          <input 
+            class="form-input" 
+            type="{{showPassword ? 'text' : 'password'}}" 
+            placeholder="请输入密码"
+            value="{{formData.password}}"
+            bindinput="onInput"
+            data-field="password"
+            maxlength="50"
+          />
+          <text class="password-toggle" bindtap="togglePassword">
+            {{showPassword ? '👁️' : '👁️‍🗨️'}}
+          </text>
+        </view>
+        <text class="error-text" wx:if="{{formErrors.password}}">{{formErrors.password}}</text>
+      </view>
+
+      <!-- 记住我 & 忘记密码 -->
+      <view class="form-options">
+        <view class="remember-me" bindtap="toggleRemember">
+          <view class="checkbox {{rememberMe ? 'checked' : ''}}">
+            <text wx:if="{{rememberMe}}">✓</text>
+          </view>
+          <text class="remember-text">记住我</text>
+        </view>
+        <text class="forgot-password" bindtap="forgotPassword">忘记密码？</text>
+      </view>
+
+      <!-- 登录按钮 -->
+      <button 
+        class="login-btn account-btn" 
+        bindtap="accountLogin"
+        loading="{{isLoading}}"
+        disabled="{{isLoading}}"
+      >
+        {{isLoading ? '登录中' : '登录'}}
+      </button>
+
+      <!-- 注册链接 -->
+      <view class="register-link">
+        <text>还没有账号？</text>
+        <text class="register-text" bindtap="goToRegister">立即注册</text>
+      </view>
+    </view>
+
+    
+
+    <!-- 其他登录方式 -->
+    <view class="other-login">
+      <view class="divider">
+        <text class="divider-line"></text>
+        <text class="divider-text">其他登录方式</text>
+        <text class="divider-line"></text>
+      </view>
+      
+      <view class="other-login-options">
+        <view class="other-login-item">
+          <text class="other-login-icon">📧</text>
+          <text class="other-login-text">邮箱登录</text>
+        </view>
+        <view class="other-login-item">
+          <text class="other-login-icon">📱</text>
+          <text class="other-login-text">短信登录</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部装饰 -->
+  <view class="footer-decoration">
+    <text class="footer-text">© 2024 旅行规划 - 让旅行更美好</text>
+  </view>
+</view>
