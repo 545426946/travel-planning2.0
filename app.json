@@ -7,11 +7,7 @@
     "pages/ai-assistant/ai-assistant",
     "pages/travel-plans/travel-plans",
     "pages/plan-detail/plan-detail",
-    "pages/create-plan/create-plan",
-    "pages/ai-plan/ai-plan-debug",
-    "pages/ai-plan/enhanced-ai-plan",
-    "pages/travel-plans/data-debug",
-    "pages/test-day-description/test-day-description"
+    "pages/create-plan/create-plan"
   ],
   "window": {
     "backgroundTextStyle": "light",

@@ -687,10 +687,6 @@ Page({
     const userId = Auth.getCurrentUserId()
     const { destination, description, type, days = 3, travelers = 2, budget = 2000, style = 'comfortable' } = params
     
-    // 提前定义日期，避免在prompt中出现undefined错误
-    const startDate = new Date()
-    const endDate = new Date(startDate.getTime() + (days - 1) * 24 * 60 * 60 * 1000)
-    
     // 如果AI调用失败，使用预设的行程模板
     const generateDefaultItinerary = (dest, totalDays, totalTravelers, totalBudget, travelStyle) => {
       // 根据目的地生成特色内容
@@ -932,7 +928,9 @@ Day 4 - ${new Date(startDate.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().
         itinerary = generateDefaultItinerary(destination, days, travelers, budget, style)
       }
 
-    // 保存到数据库（使用前面已定义的日期）
+    // 保存到数据库
+    const startDate = new Date()
+    const endDate = new Date(startDate.getTime() + (days - 1) * 24 * 60 * 60 * 1000) // 根据用户选择的天数计算结束日期
     
       console.log('生成行程的日期范围:', {
         start: startDate.toISOString().split('T')[0],
