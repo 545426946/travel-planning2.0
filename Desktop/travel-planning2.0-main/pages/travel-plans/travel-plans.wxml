@@ -1,0 +1,139 @@
+<view class="container">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <view class="header-content">
+      <text class="page-title">行程规划</text>
+      <text class="page-subtitle">创建属于你的完美旅行计划</text>
+    </view>
+  </view>
+
+  <!-- 创建行程按钮组 -->
+  <view class="create-section">
+    <button class="create-btn manual" bindtap="createNewPlan">
+      <view class="btn-icon"></view>
+      <text>手动创建</text>
+    </button>
+    <button class="create-btn ai" bindtap="createNewPlan">
+      <view class="btn-icon"></view>
+      <text>AI智能规划</text>
+    </button>
+  </view>
+
+  <!-- 筛选栏 -->
+  <view class="filter-bar">
+    <view class="filter-item {{filterStatus === 'all' ? 'active' : ''}}" 
+          bindtap="changeFilter" 
+          data-status="all">
+      <text>全部</text>
+    </view>
+    <view class="filter-item {{filterStatus === 'planned' ? 'active' : ''}}" 
+          bindtap="changeFilter" 
+          data-status="planned">
+      <text>计划中</text>
+    </view>
+    <view class="filter-item {{filterStatus === 'ongoing' ? 'active' : ''}}" 
+          bindtap="changeFilter" 
+          data-status="ongoing">
+      <text>进行中</text>
+    </view>
+    <view class="filter-item {{filterStatus === 'completed' ? 'active' : ''}}" 
+          bindtap="changeFilter" 
+          data-status="completed">
+      <text>已完成</text>
+    </view>
+  </view>
+
+  <!-- 我的行程列表 -->
+  <view class="plans-section">
+    <view class="section-title">我的行程</view>
+    
+    <!-- 加载状态 -->
+    <view wx:if="{{loading}}" class="loading-container">
+      <text>加载中...</text>
+    </view>
+
+    <!-- 空状态 -->
+    <view wx:elif="{{travelPlans.length === 0}}" class="empty-state">
+      <text class="empty-icon">📝</text>
+      <text class="empty-text">还没有行程计划</text>
+      <text class="empty-hint">点击上方按钮创建你的第一个行程吧</text>
+    </view>
+
+    <!-- 行程列表 -->
+    <view wx:else class="plan-list">
+      <view wx:for="{{travelPlans}}" 
+            wx:key="id" 
+            class="plan-card"
+            bindtap="viewPlanDetail"
+            data-id="{{item.id}}">
+        
+        <!-- 行程图片 -->
+        <image class="plan-image" src="{{item.image}}" mode="aspectFill" />
+        
+        <!-- AI标记 -->
+        <view wx:if="{{item.isAIGenerated}}" class="ai-badge">
+          <text>AI生成</text>
+        </view>
+
+        <!-- 行程信息 -->
+        <view class="plan-info">
+          <view class="plan-header">
+            <text class="plan-title" user-select="{{true}}">{{item.title}}</text>
+            <view class="plan-status" style="background-color: {{getStatusColor(item.status)}}">
+              <text user-select="{{true}}">{{getStatusText(item.status)}}</text>
+            </view>
+          </view>
+
+          <text class="plan-description" user-select="{{true}}">{{item.description}}</text>
+
+          <!-- 行程元数据 -->
+          <view class="plan-meta">
+            <view class="meta-item">
+              <text class="meta-icon">📅</text>
+              <text class="meta-text" user-select="{{true}}">{{item.totalDays}}天</text>
+            </view>
+            <view class="meta-item">
+              <text class="meta-icon">👥</text>
+              <text class="meta-text" user-select="{{true}}">{{item.travelers}}人</text>
+            </view>
+            <view class="meta-item">
+              <text class="meta-icon">💰</text>
+              <text class="meta-text" user-select="{{true}}">¥{{item.budget}}</text>
+            </view>
+            <view class="meta-item">
+              <text class="meta-icon">📍</text>
+              <text class="meta-text" user-select="{{true}}">{{item.destination}}</text>
+            </view>
+          </view>
+
+          <!-- 标签 -->
+          <view wx:if="{{item.tags && item.tags.length > 0}}" class="plan-tags">
+            <view wx:for="{{item.tags}}" wx:key="index" wx:for-item="tag" class="tag">
+              <text user-select="{{true}}">{{tag}}</text>
+            </view>
+          </view>
+
+          <!-- 操作按钮 -->
+          <view class="plan-actions">
+            <button class="action-btn view" 
+                    catchtap="viewPlanDetail" 
+                    data-id="{{item.id}}">
+              <text>查看</text>
+            </button>
+            <button class="action-btn edit" 
+                    catchtap="editPlan" 
+                    data-id="{{item.id}}">
+              <text>编辑</text>
+            </button>
+            <button class="action-btn more" 
+                    catchtap="showMoreActions" 
+                    data-id="{{item.id}}"
+                    data-title="{{item.title}}">
+              <text>更多</text>
+            </button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

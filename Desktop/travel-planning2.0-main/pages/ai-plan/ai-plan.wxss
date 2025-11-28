@@ -1,0 +1,265 @@
+/* pages/ai-plan/ai-plan.wxss */
+page {
+  background: #f5f7fa;
+  height: 100%;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #f5f7fa;
+}
+
+/* 顶部标题 */
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40rpx 30rpx 50rpx;
+  color: #fff;
+}
+
+.header-title {
+  font-size: 44rpx;
+  font-weight: bold;
+  margin-bottom: 12rpx;
+}
+
+.header-subtitle {
+  font-size: 28rpx;
+  opacity: 0.9;
+}
+
+/* 表单容器 */
+.form-container {
+  flex: 1;
+  padding: 30rpx;
+  overflow-y: auto;
+}
+
+/* 表单区块 */
+.form-section {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+.form-section.half {
+  width: calc(50% - 12rpx);
+}
+
+.form-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 24rpx;
+}
+
+/* 表单标签 */
+.form-label {
+  font-size: 30rpx;
+  color: #333;
+  margin-bottom: 20rpx;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+.required {
+  color: #ff4d4f;
+  margin-right: 8rpx;
+  font-size: 32rpx;
+}
+
+/* 输入框 */
+.form-input {
+  width: 100%;
+  height: 80rpx;
+  padding: 0 24rpx;
+  background: #f5f7fa;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #333;
+  border: 2rpx solid transparent;
+  transition: all 0.3s;
+}
+
+.form-input:focus {
+  background: #fff;
+  border-color: #667eea;
+}
+
+/* 选择器 */
+.form-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 80rpx;
+  padding: 0 24rpx;
+  background: #f5f7fa;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  border: 2rpx solid transparent;
+}
+
+.form-picker .placeholder {
+  color: #999;
+}
+
+.form-picker .selected {
+  color: #333;
+}
+
+.form-picker .iconfont {
+  color: #999;
+  font-size: 24rpx;
+}
+
+/* 复选框组 */
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 28rpx;
+  background: #f5f7fa;
+  border-radius: 40rpx;
+  font-size: 26rpx;
+  color: #666;
+  border: 2rpx solid transparent;
+  transition: all 0.3s;
+}
+
+.checkbox-item.checked {
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.checkbox-icon {
+  width: 32rpx;
+  height: 32rpx;
+  border: 2rpx solid #d9d9d9;
+  border-radius: 6rpx;
+  margin-right: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  color: #fff;
+  transition: all 0.3s;
+}
+
+.checkbox-item.checked .checkbox-icon {
+  background: #667eea;
+  border-color: #667eea;
+}
+
+/* 单选框组 */
+.radio-group {
+  display: flex;
+  gap: 20rpx;
+}
+
+.radio-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20rpx;
+  background: #f5f7fa;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  color: #666;
+  border: 2rpx solid transparent;
+  transition: all 0.3s;
+}
+
+.radio-item.active {
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.radio-icon {
+  width: 32rpx;
+  height: 32rpx;
+  border: 2rpx solid #d9d9d9;
+  border-radius: 50%;
+  margin-right: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.radio-item.active .radio-icon {
+  border-color: #667eea;
+}
+
+.radio-dot {
+  width: 16rpx;
+  height: 16rpx;
+  background: #667eea;
+  border-radius: 50%;
+}
+
+/* 文本域 */
+.form-textarea {
+  width: 100%;
+  min-height: 160rpx;
+  padding: 20rpx;
+  background: #f5f7fa;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #333;
+  border: 2rpx solid transparent;
+}
+
+.textarea-counter {
+  text-align: right;
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 12rpx;
+}
+
+/* 底部按钮 */
+.footer {
+  display: flex;
+  gap: 20rpx;
+  padding: 24rpx 30rpx;
+  background: #fff;
+  border-top: 1rpx solid #f0f0f0;
+  box-shadow: 0 -4rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+.btn-cancel {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: #f5f7fa;
+  color: #666;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  border: none;
+}
+
+.btn-submit {
+  flex: 2;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  border: none;
+  font-weight: 500;
+}
+
+.btn-submit[loading] {
+  opacity: 0.8;
+}

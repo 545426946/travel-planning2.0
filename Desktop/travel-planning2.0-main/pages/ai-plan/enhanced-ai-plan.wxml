@@ -1,0 +1,102 @@
+<!-- 增强版AI规划页面 -->
+<view class="container">
+  <view class="header">
+    <text class="title">🚀 AI智能规划(增强版)</text>
+    <text class="subtitle">生成更详细、具体的行程描述</text>
+  </view>
+
+  <!-- 表单区域 -->
+  <view class="form-section">
+    <view class="form-group">
+      <text class="label">📍 目的地</text>
+      <input class="input" placeholder="请输入旅行目的地" 
+             data-field="destination" 
+             value="{{formData.destination}}" 
+             bindinput="onDestinationInput" />
+    </view>
+
+    <view class="form-group">
+      <text class="label">📅 旅行天数</text>
+      <picker mode="selector" range="{{dayOptions}}" value="{{formData.daysIndex}}" 
+              bindchange="onDaysChange">
+        <view class="picker">{{formData.days || '请选择天数'}}</view>
+      </picker>
+    </view>
+
+    <view class="form-group">
+      <text class="label">👥 出行人数</text>
+      <input class="input" type="number" placeholder="请输入人数" 
+             data-field="travelers" 
+             value="{{formData.travelers}}" 
+             bindinput="onTravelersInput" />
+    </view>
+
+    <view class="form-group">
+      <text class="label">💰 预算(元)</text>
+      <input class="input" type="digit" placeholder="请输入预算" 
+             data-field="budget" 
+             value="{{formData.budget}}" 
+             bindinput="onBudgetInput" />
+    </view>
+
+    <view class="form-group">
+      <text class="label">🎨 旅行风格</text>
+      <radio-group class="radio-group" bindchange="onStyleTap">
+        <label wx:for="{{styles}}" wx:key="value" class="radio-item">
+          <radio value="{{item.value}}" checked="{{formData.style === item.value}}" />
+          <text>{{item.label}}</text>
+        </label>
+      </radio-group>
+    </view>
+
+    <view class="form-group">
+      <text class="label">❤️ 兴趣偏好</text>
+      <view class="interests">
+        <label wx:for="{{interests}}" wx:key="value" wx:for-index="index" 
+               class="interest-item" bindtap="onInterestTap" data-index="{{index}}">
+          <checkbox checked="{{item.checked}}" />
+          <text>{{item.label}}</text>
+        </label>
+      </view>
+    </view>
+
+    <view class="form-group">
+      <text class="label">📝 特殊要求</text>
+      <textarea class="textarea" placeholder="请输入特殊需求或偏好" 
+                data-field="specialRequirements" 
+                value="{{formData.specialRequirements}}" 
+                bindinput="onSpecialRequirementsInput" />
+    </view>
+  </view>
+
+  <!-- 增强功能说明 -->
+  <view class="enhancement-notice">
+    <view class="notice-title">🌟 增强功能</view>
+    <view class="notice-content">
+      • 每个时间段提供详细的活动描述
+      • 包含景点历史背景和文化特色
+      • 推荐具体餐厅和菜品
+      • 详细的交通路线和时间安排
+      • 个性化的购物和娱乐建议
+      • 完整的费用明细分解
+      • 实用的贴士和注意事项
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="actions">
+    <button class="btn btn-cancel" bindtap="onCancel">返回</button>
+    <button class="btn btn-primary" loading="{{isLoading}}" bindtap="onSubmit">
+      {{isLoading ? '规划中...' : '🚀 开始增强规划'}}
+    </button>
+  </view>
+
+  <!-- 加载状态 -->
+  <view wx:if="{{isLoading}}" class="loading-overlay">
+    <view class="loading-content">
+      <view class="loading-icon">🤖</view>
+      <text class="loading-text">AI正在为您规划详细行程...</text>
+      <text class="loading-tip">这可能需要30-60秒</text>
+    </view>
+  </view>
+</view>

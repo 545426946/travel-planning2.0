@@ -1,0 +1,181 @@
+<view class="container">
+  <!-- 首页 -->
+  <scroll-view wx:if="{{currentTab === 0}}" class="scroll-area" scroll-y>
+    <view class="header-section">
+      <view class="top-bar">
+        <text class="logo">轻松旅行规划</text>
+        <view class="user-info" wx:if="{{userInfo}}" bindtap="showUserOptions">
+          <image class="user-avatar" src="{{userInfo.avatar}}" mode="aspectFill" binderror="onImageError"></image>
+          <text class="username">{{userInfo.name}}</text>
+        </view>
+        <view class="user-info" wx:else>
+          <button class="login-btn-header" bindtap="goToLogin">登录</button>
+        </view>
+      </view>
+      <view class="hero-section">
+        <text class="hero-title">帮您轻松进行完美旅行规划</text>
+        <text class="hero-subtitle">一键探索，开启你的旅程</text>
+        <view class="button-group">
+          <button class="explore-btn" bindtap="exploreDestinations">立即探索</button>
+          <button class="ai-btn" bindtap="showAIHelper">AI助手</button>
+        </view>
+      </view>
+    </view>
+    
+    <view class="map-section">
+      <view class="section-title">探索地图</view>
+      <view class="map-container">
+        <image class="map-image" src="https://picsum.photos/seed/map/800/400.jpg" mode="widthFix"></image>
+      </view>
+    </view>
+    
+    <view class="banner-section">
+      <swiper class="banner-swiper" indicator-dots autoplay interval="5000" duration="1000">
+        <swiper-item wx:for="{{banners}}" wx:key="index">
+          <image src="{{item.image}}" mode="aspectFill" class="banner-image" />
+        </swiper-item>
+      </swiper>
+    </view>
+    
+    <view class="recommend-section">
+      <view class="section-title">AI 推荐路线</view>
+      <scroll-view class="horizontal-scroll" scroll-x>
+        <view class="route-card-container">
+          <view wx:for="{{aiRoutes}}" wx:key="index" class="route-card">
+            <image src="{{item.image}}" mode="aspectFill" class="route-image" />
+            <view class="route-info">
+              <text class="route-name">{{item.name}}</text>
+              <text class="route-desc">{{item.desc}}</text>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+    
+    <view class="destination-section">
+      <view class="section-title">精选目的地</view>
+      <view class="destination-grid">
+        <view wx:for="{{destinations}}" wx:key="index" class="destination-card">
+          <image src="{{item.image}}" mode="aspectFill" class="dest-image" />
+          <text class="dest-name">{{item.name}}</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+  
+  <!-- 行程规划页 -->
+  <scroll-view wx:if="{{currentTab === 1}}" class="scroll-area" scroll-y>
+    <view class="planner-header">
+      <text class="page-title">行程规划</text>
+      <view class="button-row">
+        <button class="add-btn ai-plan-btn" bindtap="aiPlanItinerary">
+          <icon type="success" size="18" color="#fff"></icon>
+          AI规划
+        </button>
+        <button class="add-btn" bindtap="addNewPlan">
+          <icon type="add" size="18" color="#fff"></icon>
+          新建行程
+        </button>
+      </view>
+    </view>
+    <view class="plan-list">
+      <view wx:for="{{travelPlans}}" wx:key="index" class="plan-item">
+        <view class="plan-date">{{item.date}}</view>
+        <view class="plan-details">
+          <view class="location-row">
+            <icon type="location" size="16" color="#FF6B6B"></icon>
+            <text>{{item.from}} → {{item.to}}</text>
+          </view>
+          <text class="plan-time">{{item.time}}</text>
+        </view>
+        <icon type="arrowright" size="16" color="#ccc"></icon>
+      </view>
+    </view>
+  </scroll-view>
+  
+  <!-- 热门景点页 -->
+  <scroll-view wx:if="{{currentTab === 2}}" class="scroll-area" scroll-y>
+    <view class="hotspots-header">
+      <text class="page-title">热门景点</text>
+    </view>
+    <view class="hotspot-list">
+      <view wx:for="{{hotSpots}}" wx:key="index" class="hotspot-card">
+        <image src="{{item.image}}" mode="aspectFill" class="spot-image" />
+        <view class="spot-info">
+          <text class="spot-name">{{item.name}}</text>
+          <view class="rating-section">
+            <icon wx:for="{{5}}" wx:key="index" wx:for-item="i" type="success" size="14" color="{{i <= item.rating ? '#FFD700' : '#E0E0E0'}}"></icon>
+            <text class="rating-text">{{item.rating}}分</text>
+          </view>
+          <text class="spot-desc">{{item.description}}</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+  
+  <!-- 个人主页 -->
+  <scroll-view wx:if="{{currentTab === 3}}" class="scroll-area" scroll-y>
+    <view class="profile-header" wx:if="{{userInfo}}">
+      <image src="{{userInfo.avatar}}" mode="aspectFill" class="avatar" bindtap="showUserOptions" />
+      <text class="username">{{userInfo.name}}</text>
+      <view class="stats-row">
+        <view class="stat-item">
+          <text class="stat-number">{{stats.visitedPlaces || 0}}</text>
+          <text class="stat-label">去过的地方</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-number">{{stats.favoriteRoutes || 0}}</text>
+          <text class="stat-label">收藏路线</text>
+        </view>
+      </view>
+    </view>
+    <view class="profile-header" wx:else>
+      <image src="https://picsum.photos/seed/default-profile/400/400.jpg" mode="aspectFill" class="avatar" />
+      <text class="username">未登录</text>
+      <view class="login-prompt">
+        <text>请先登录查看个人信息</text>
+        <button class="login-btn-profile" bindtap="goToLogin">立即登录</button>
+      </view>
+    </view>
+    
+    <view class="my-plans-section">
+      <view class="section-title">我的行程</view>
+      <view class="my-plan-list">
+        <view wx:for="{{myTravelPlans}}" wx:key="index" class="my-plan-item">
+          <image src="{{item.image}}" mode="aspectFill" class="plan-thumb" />
+          <view class="plan-summary">
+            <text class="plan-title">{{item.title}}</text>
+            <text class="plan-duration">{{item.duration}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <view class="settings-section">
+      <view class="setting-item" bindtap="showSettings">
+        <icon type="settings" size="20" color="#333"></icon>
+        <text>设置</text>
+      </view>
+      <view class="setting-item" bindtap="showUserProfile" wx:if="{{userInfo}}">
+        <icon type="person" size="20" color="#333"></icon>
+        <text>个人资料</text>
+      </view>
+      <view class="setting-item">
+        <icon type="help" size="20" color="#333"></icon>
+        <text>帮助与反馈</text>
+      </view>
+      <view class="setting-item logout-item" bindtap="logout" wx:if="{{userInfo}}">
+        <icon type="close" size="20" color="#FF6B6B"></icon>
+        <text style="color: #FF6B6B;">退出登录</text>
+      </view>
+    </view>
+  </scroll-view>
+  
+  <!-- 底部导航栏 -->
+  <view class="tab-bar">
+    <view wx:for="{{tabs}}" wx:key="index" class="tab-item" bindtap="switchTab" data-index="{{index}}">
+      <icon type="{{currentTab === index ? item.activeIcon : item.icon}}" size="24" color="{{currentTab === index ? '#4A90E2' : '#999'}}"></icon>
+      <text class="{{currentTab === index ? 'active' : ''}}">{{item.text}}</text>
+    </view>
+  </view>
+</view>

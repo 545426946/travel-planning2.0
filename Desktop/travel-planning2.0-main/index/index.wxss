@@ -1,0 +1,688 @@
+page {
+  height: 100%;
+  font-size: 28rpx;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 160rpx; /* 为底部 tab 留出空间 */
+}
+
+/* 首页样式 */
+.header-section {
+  padding: 60rpx 40rpx 30rpx;
+  background: linear-gradient(135deg,rgb(115, 186, 184) 0%,rgb(112, 182, 171) 100%);
+  border-bottom-left-radius: 60rpx;
+  border-bottom-right-radius: 60rpx;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40rpx;
+}
+
+.logo {
+  display: block;
+  font-size: 52rpx;
+  font-weight: bold;
+  color:rgb(86, 39, 39);
+  margin-bottom: 25rpx;
+  letter-spacing: 1rpx;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  transition: opacity 0.3s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 20rpx;
+}
+
+.user-info:active {
+  opacity: 0.7;
+}
+
+.user-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  border: 3rpx solid rgb(108, 80, 80);
+}
+
+.login-btn-header {
+  background: rgb(199, 199, 199);
+  color: rgb(0, 0, 0);
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+  border-radius: 30rpx;
+  font-size: 32rpx;
+  padding: 16rpx 21rpx;
+  line-height: 1;
+  min-width: 107rpx;
+  max-width: 147rpx;
+}
+
+.login-btn-profile {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: #ffffff;
+  border: none;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  padding: 20rpx 40rpx;
+  margin-top: 30rpx;
+}
+
+.login-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 30rpx;
+}
+
+.login-prompt text {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 28rpx;
+  margin-bottom: 20rpx;
+}
+
+.username {
+  margin-left: 20rpx;
+  font-size: 32rpx;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.hero-section {
+  text-align: center;
+  padding: 50rpx 0 40rpx;
+}
+
+.hero-title {
+  display: block;
+  font-size: 52rpx;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 25rpx;
+  letter-spacing: 1rpx;
+}
+
+.hero-subtitle {
+  display: block;
+  font-size: 32rpx;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 50rpx;
+  line-height: 1.5;
+}
+
+.button-group {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 40rpx;
+  justify-content: center;
+}
+
+.explore-btn, .ai-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(45deg,rgb(125, 118, 118),rgb(125, 118, 118));
+  color: #ffffff;
+  border: none;
+  border-radius: 50rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  padding: 20rpx 40rpx;
+  transition: all 0.3s ease;
+}
+
+.ai-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color:rgb(58, 58, 58);
+  background: linear-gradient(135deg,rgb(198, 198, 198) 0%,rgb(198, 198, 198) 100%);
+  border-radius: 50rpx;
+  padding: 30rpx 60rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  box-shadow: 0 10rpx 25rpx rgba(255, 107, 107, 0.3);
+  transition: all 0.3s ease;
+}
+
+.map-section {
+  padding: 40rpx 30rpx;
+}
+
+.map-container {
+  position: relative;
+  border-radius: 30rpx;
+  overflow: hidden;
+  box-shadow: 0 15rpx 35rpx rgba(0, 0, 0, 0.08);
+}
+
+.map-image {
+  width: 100%;
+  min-height: 400rpx;
+}
+
+
+
+
+
+.banner-section {
+  padding: 30rpx 30rpx;
+}
+
+.banner-swiper {
+  height: 400rpx;
+  border-radius: 30rpx;
+  overflow: hidden;
+  box-shadow: 0 15rpx 35rpx rgba(0, 0, 0, 0.08);
+}
+
+.banner-image {
+  width: 100%;
+  height: 100%;
+}
+
+.recommend-section,
+.destination-section {
+  padding: 40rpx 30rpx;
+}
+
+.section-title {
+  font-size: 42rpx;
+  font-weight: bold;
+  color: #2c3e50;
+  margin-bottom: 40rpx;
+  position: relative;
+  padding-left: 20rpx;
+}
+
+.section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8rpx;
+  height: 32rpx;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  border-radius: 4rpx;
+}
+
+.horizontal-scroll {
+  white-space: nowrap;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+.route-card-container {
+  display: inline-flex;
+  padding-bottom: 10rpx;
+}
+
+.route-card {
+  width: 600rpx;
+  margin-right: 30rpx;
+  background-color: #fff;
+  border-radius: 25rpx;
+  box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.route-image {
+  width: 100%;
+  height: 320rpx;
+}
+
+.route-info {
+  padding: 30rpx;
+}
+
+.route-name {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #2c3e50;
+  display: block;
+  margin-bottom: 15rpx;
+  line-height: 1.3;
+}
+
+.route-desc {
+  font-size: 28rpx;
+  color: #7f8c8d;
+  line-height: 1.4;
+}
+
+.destination-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 25rpx;
+}
+
+.destination-card {
+  background-color: #fff;
+  border-radius: 25rpx;
+  overflow: hidden;
+  box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s ease;
+}
+
+.dest-image {
+  width: 100%;
+  height: 280rpx;
+}
+
+.dest-name {
+  display: block;
+  padding: 30rpx 20rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #2c3e50;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* 行程规划页样式 */
+.planner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 60rpx 40rpx 30rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom-left-radius: 60rpx;
+  border-bottom-right-radius: 60rpx;
+}
+
+.page-title {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #ffffff;
+  letter-spacing: 1rpx;
+}
+
+.add-btn {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+  color: #fff;
+  border: none;
+  border-radius: 50rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  padding: 20rpx 40rpx;
+  transition: all 0.3s ease;
+}
+
+.button-row {
+  display: flex;
+  gap: 20rpx;
+  justify-content: center;
+}
+
+.ai-plan-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  margin-right: 20rpx;
+  border-radius: 50rpx;
+  padding: 25rpx 40rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  box-shadow: 0 10rpx 25rpx rgba(255, 107, 107, 0.3);
+}
+
+.plan-list {
+  padding: 40rpx 30rpx;
+}
+
+.plan-item {
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  border-radius: 25rpx;
+  padding: 40rpx 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s ease;
+}
+
+.plan-date {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #667eea;
+  min-width: 160rpx;
+  margin-right: 30rpx;
+}
+
+.plan-details {
+  flex: 1;
+}
+
+.location-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15rpx;
+}
+
+.location-row text {
+  margin-left: 15rpx;
+  font-size: 32rpx;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.plan-time {
+  font-size: 28rpx;
+  color: #7f8c8d;
+}
+
+/* 热门景点页样式 */
+.hotspots-header {
+  padding: 60rpx 40rpx 30rpx;
+  background: linear-gradient(135deg,rgb(145, 214, 184) 0%,rgb(133, 198, 143) 100%);
+  border-bottom-left-radius: 60rpx;
+  border-bottom-right-radius: 60rpx;
+}
+
+.hotspot-list {
+  padding: 40rpx 30rpx;
+}
+
+.hotspot-card {
+  display: flex;
+  background-color: #fff;
+  border-radius: 25rpx;
+  overflow: hidden;
+  margin-bottom: 30rpx;
+  box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s ease;
+}
+
+.spot-image {
+  width: 200rpx;
+  height: 200rpx;
+  flex-shrink: 0;
+}
+
+.spot-info {
+  flex: 1;
+  padding: 30rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.spot-name {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #2c3e50;
+  display: block;
+  margin-bottom: 15rpx;
+  line-height: 1.3;
+}
+
+.rating-section {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15rpx;
+}
+
+.rating-text {
+  margin-left: 15rpx;
+  font-size: 28rpx;
+  color: #f39c12;
+  font-weight: 600;
+}
+
+.spot-desc {
+  font-size: 28rpx;
+  color: #7f8c8d;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* 个人主页样式 */
+.profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 50rpx 40rpx 40rpx;
+  background: linear-gradient(135deg,rgb(121, 184, 207) 0%,rgb(142, 190, 220) 100%);
+  color: #fff;
+
+}
+
+.avatar {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  border: 6rpx solid rgba(255, 255, 255, 0.4);
+  margin-bottom: 20rpx;
+  box-shadow: 0 12rpx 25rpx rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.avatar:active {
+  transform: scale(0.95);
+  box-shadow: 0 10rpx 25rpx rgba(0, 0, 0, 0.25);
+}
+
+.username {
+  font-size: 48rpx;
+  font-weight: bold;
+  margin-bottom: 40rpx;
+  letter-spacing: 1rpx;
+}
+
+.stats-row {
+  display: flex;
+  width: 100%;
+  justify-content: space-around;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-number {
+  display: block;
+  font-size: 52rpx;
+  font-weight: bold;
+  margin-bottom: 15rpx;
+}
+
+.stat-label {
+  font-size: 28rpx;
+  opacity: 0.9;
+}
+
+.my-plans-section {
+  padding: 40rpx 30rpx;
+}
+
+.my-plan-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 25rpx;
+}
+
+.my-plan-item {
+  background-color: #fff;
+  border-radius: 25rpx;
+  overflow: hidden;
+  box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s ease;
+}
+
+.plan-thumb {
+  width: 100%;
+  height: 240rpx;
+}
+
+.plan-summary {
+  padding: 30rpx;
+}
+
+.plan-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #2c3e50;
+  display: block;
+  margin-bottom: 15rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.plan-duration {
+  font-size: 26rpx;
+  color: #7f8c8d;
+}
+
+.settings-section {
+  padding: 0 30rpx 80rpx;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  padding: 40rpx 0;
+  border-bottom: 1rpx solid #ecf0f1;
+  transition: background-color 0.3s ease;
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-item text {
+  margin-left: 25rpx;
+  font-size: 32rpx;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.logout-item {
+  background-color: rgba(255, 107, 107, 0.05);
+  border-radius: 20rpx;
+  margin-top: 20rpx;
+  padding: 40rpx 20rpx;
+}
+
+.logout-item:active {
+  background-color: rgba(255, 107, 107, 0.1);
+}
+
+/* 底部导航栏样式 */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 160rpx;
+  background-color: #fff;
+  border-top: 1rpx solid #ecf0f1;
+  z-index: 999;
+  box-shadow: 0 -5rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  flex: 1;
+  transition: all 0.3s ease;
+}
+
+.tab-item text {
+  font-size: 24rpx;
+  color: #95a5a6;
+  margin-top: 12rpx;
+  font-weight: 500;
+  letter-spacing: 0.5rpx;
+}
+
+.tab-item text.active {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.tab-item:active {
+  transform: scale(0.95);
+}
+
+/* 响应式设计和交互效果 */
+.route-card:active,
+.destination-card:active,
+.plan-item:active,
+.hotspot-card:active,
+.my-plan-item:active {
+  transform: translateY(5rpx);
+  box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.setting-item:active {
+  background-color: #f8f9fa;
+}
+
+/* 通用卡片悬停效果 */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+/* 页面切换动画 */
+.page-transition {
+  transition: opacity 0.3s ease;
+}
+
+/* 微信小程序不支持自定义滚动条，已移除相关样式 */
+
+/* 加载状态 */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60rpx;
+  color: #95a5a6;
+  font-size: 28rpx;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 60rpx;
+  color: #95a5a6;
+}
+
+.empty-state text {
+  font-size: 32rpx;
+  margin-top: 30rpx;
+}
