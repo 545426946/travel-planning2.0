@@ -97,7 +97,7 @@ page {
 }
 
 /* 登录方式切换 */
-.login-type-switch {
+.login-method-tabs {
   display: flex;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 50rpx;
@@ -106,7 +106,7 @@ page {
   backdrop-filter: blur(10rpx);
 }
 
-.switch-item {
+.tab-item {
   flex: 1;
   display: flex;
   align-items: center;
@@ -117,28 +117,95 @@ page {
   cursor: pointer;
 }
 
-.switch-item.active {
+.tab-item.active {
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 8rpx 25rpx rgba(0, 0, 0, 0.15);
 }
 
-.switch-item text {
+.tab-item text {
   font-size: 28rpx;
   font-weight: 500;
   transition: color 0.3s ease;
 }
 
-.switch-item.active text {
+.tab-item.active text {
   color: #667eea;
 }
 
-.switch-item:not(.active) text {
+.tab-item:not(.active) text {
   color: rgba(255, 255, 255, 0.9);
 }
 
-.switch-icon {
+.tab-icon {
   margin-right: 12rpx;
   font-size: 32rpx;
+}
+
+/* 微信登录区域 */
+.wechat-login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40rpx;
+}
+
+.wechat-login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(45deg, #07C160, #06AE56);
+  color: white;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  box-shadow: 0 10rpx 25rpx rgba(7, 193, 96, 0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  margin-bottom: 30rpx;
+}
+
+.wechat-login-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 5rpx 15rpx rgba(7, 193, 96, 0.3);
+}
+
+.wechat-icon {
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 15rpx;
+}
+
+.wechat-logo {
+  width: 100%;
+  height: 100%;
+}
+
+.wechat-login-text {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.auth-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 20rpx;
+  margin-top: 20rpx;
+}
+
+.auth-status-text {
+  font-size: 26rpx;
+  color: #ff6b6b;
+  margin-bottom: 8rpx;
+}
+
+.auth-status-tip {
+  font-size: 24rpx;
+  color: rgba(255, 107, 107, 0.8);
 }
 
 /* 表单样式 */

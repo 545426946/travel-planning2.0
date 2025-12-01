@@ -1,15 +1,17 @@
-// pages/login/login.js
-// 使用真实的 Supabase 连接（需要配置域名白名单）
+// pages/login/login.js - 支持微信登录和账号密码登录
 const supabase = require('../../utils/supabase').supabase
-// const supabase = require('../../utils/supabase-mock').supabase
+const WeChatAuth = require('../../utils/wechat-auth').WeChatAuth
 const Auth = require('../../utils/auth').Auth
 
 console.log('🔍 模块导入检查:')
 console.log('  - supabase:', supabase ? '✅' : '❌')
+console.log('  - WeChatAuth:', WeChatAuth ? '✅' : '❌')
 console.log('  - Auth:', Auth ? '✅' : '❌')
 
 Page({
   data: {
+    // 登录方式切换
+    loginMethod: 'wechat', // 'wechat' | 'account'
     // 表单数据
     formData: {
       username: '',
@@ -22,10 +24,14 @@ Page({
     },
     // 登录状态
     isLoading: false,
+    // 微信登录状态
+    wechatLoading: false,
     // 显示密码
     showPassword: false,
     // 记住我
-    rememberMe: false
+    rememberMe: false,
+    // 微信授权状态
+    wechatAuthStatus: 'pending' // 'pending' | 'granted' | 'denied'
   },
 
   onLoad() {
@@ -40,6 +46,9 @@ Page({
       this.redirectToHome()
       return
     }
+    
+    // 检查微信登录状态
+    this.checkWechatAuthStatus()
     
     // 加载保存的用户名
     this.loadSavedUsername()
@@ -95,6 +104,66 @@ Page({
 
     this.setData({ formErrors: errors })
     return isValid
+  },
+
+  // 切换登录方式
+  switchLoginMethod(e) {
+    const method = e.currentTarget.dataset.method
+    this.setData({ loginMethod: method })
+    
+    if (method === 'wechat') {
+      // 尝试微信登录
+      this.performWechatLogin()
+    }
+  },
+
+  // 检查微信授权状态
+  checkWechatAuthStatus() {
+    wx.getSetting({
+      success: (res) => {
+        const authSetting = res.authSetting
+        if (authSetting['scope.userInfo']) {
+          this.setData({ wechatAuthStatus: 'granted' })
+        } else {
+          this.setData({ wechatAuthStatus: 'denied' })
+        }
+      }
+    })
+  },
+
+  // 执行微信登录
+  async performWechatLogin() {
+    this.setData({ wechatLoading: true })
+    
+    try {
+      const result = await WeChatAuth.wechatLogin({
+        getUserProfile: true,
+        saveToDatabase: true
+      })
+
+      if (result.success) {
+        wx.showToast({
+          title: '微信登录成功',
+          icon: 'success'
+        })
+
+        setTimeout(() => {
+          this.redirectToHome()
+        }, 1500)
+      } else {
+        throw new Error(result.message || '微信登录失败')
+      }
+
+    } catch (error) {
+      console.error('微信登录失败:', error)
+      wx.showToast({
+        title: error.message || '微信登录失败',
+        icon: 'none',
+        duration: 2000
+      })
+    } finally {
+      this.setData({ wechatLoading: false })
+    }
   },
 
   // 账号密码登录

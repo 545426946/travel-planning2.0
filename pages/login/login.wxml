@@ -15,10 +15,46 @@
       <text class="app-slogan">让旅行更简单，让体验更精彩</text>
     </view>
 
-    
+    <!-- 登录方式选择 -->
+    <view class="login-method-tabs">
+      <view 
+        class="tab-item {{loginMethod === 'wechat' ? 'active' : ''}}" 
+        bindtap="switchLoginMethod" 
+        data-method="wechat"
+      >
+        <text class="tab-icon">💚</text>
+        <text class="tab-text">微信登录</text>
+      </view>
+      <view 
+        class="tab-item {{loginMethod === 'account' ? 'active' : ''}}" 
+        bindtap="switchLoginMethod" 
+        data-method="account"
+      >
+        <text class="tab-icon">👤</text>
+        <text class="tab-text">账号登录</text>
+      </view>
+    </view>
+
+    <!-- 微信登录区域 -->
+    <view class="wechat-login" wx:if="{{loginMethod === 'wechat'}}">
+      <view class="wechat-login-btn" bindtap="performWechatLogin">
+        <view class="wechat-icon">
+          <image class="wechat-logo" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDNS4yNzYgMCAwLTguNjg2QzMuMzE0IDAgMTUuNzMxIDEwLjI3IDE1LjczMUMxOC4xOTggMjEuMDU1IDIxLjEyMSAyMi4yMTQgMjAuODg4TDIxLjcyNSAyMi41QzIyLjM2MSAyMy40MTQgMjIuMTI1IDI0IDIwLjUgMjRDMTguODc1IDI0IDE4LjM4MSAyMi40OTkgMTYuNTk5QzE0LjgxNyAyMC41MDEgMTMuNjM2IDIwLjUgMTIuNSAyMC41QzExLjM2NCAyMC41IDEwLjE4MiAxNC44MTcgOC4zMTQgMTQuODE3QzYuNDQ2IDE0LjgxNyA0LjYzNyAxOC4yMTcgMy41IDJDMi4zNjMgMS43NTIgMS41IDAgMCAxLjc1MiAwIDMuNUMwIDUuMjUyIDAuNTYzNyA2LjQ0NiAxLjcxOSA2Ljk0OEMyLjg3NSA3LjQ1IDQuMzEzIDcuODc1IDYuMjUgOC4zMTRDNS4xODcgOC44MTQgMTMuNjM2IDguODE0IDE0LjgxNyA4LjgxNEMxOC4zODEgOC44MTQgMjAuNSAxMS4zNjQgMjAuNSAxMy41QzIwLjUgMTUuNjM2IDE4LjM4MSAxOC44MTQgMTYuNTk5IDE4LjgxNEMxNC44MTcgMjAuNSAxMS4zNjQgMjAuNSA4LjMgMjAuNUM2LjQzNyAyMC41IDUuMjUyIDE3LjA1OSAzLjUgMTUuNzMxQzEuNzQ3IDE0LjQwMyAwLjkzNyAxMy42MzYgMC45MzcgMTIuNUMwLjkzNyAxMS4zNjQgMS43NDcgMTAuMjc2IDMuNSA4LjNDNS4yNTMgNy44NzUgNS44MTMgNy44NzUgNS44MTNDNS44MTMgNS44MTMgNS44MTMgNS44MTNDNS44MTMgMy42NDEgNS44MTMgMi42MzMgNy44NzUgMi42MzMgMTAuMjc2IDcuODc1IDExLjM2NCA3Ljg3NSAxMS4zNjQgMTIuNUMxMS4zNjQgMTQuNDAzIDE0LjgxNyAxNS42MzYgMTUuNzMxQzE2LjU5OSAxNS43MzEgMTguMzg3IDE0LjQwMyAyMC41IDEyLjVDMjIuMTI1IDEwLjU5MyAyMy40MTQgNy40NTkgMjIuNSAzLjVDMjEuMTI1IDUuNTkzIDIwLjg4OCA0LjQ1OSAyMi4yMTQgM0MyMS4wNTUgMi4xMjEgMjEuMTIxIDQuMjc2IDE1LjczMSAyLjI3NEMxNS43MzEgMCAxOC4xOTggMCAxNS43MzEgMCAxMi41QzE1LjczMSAzLjMxNCAxOC4xOTggMy4zMTQgMTUuNzMxIDUuODg2QzE1LjczMSAyLjI3NiAxOC4xOTggMCAxMi41IDJDMTMuNjM2IDIgMTIuNSAyLjI3NiAxMC4xODIgMiAyLjI3NlpNMTIuNSAyMEMxMS4zNjQgMjAgMTAuMjc2IDE4LjM4MSAxMC4xODIgMTQuODE3QzguMzE0IDEwLjI3NiA2LjQ0NiA4LjY4NiAzLjUgMTJDNi40NDYgMTQuNTkzIDEuNzQ3IDE2LjU5OSAzLjUgMTZDMS43NDcgMTYuNTk5IDMuMzY0IDE4Ljg4OCAzLjM2NCAxOC44ODhDNS4yNTMgMTYuNTk5IDQuNjQ2IDEyLjVDMi4zNjMgMTIuNSAyIDkuNSAyLjI3NiAwIDE2LjU5OUMwIDE2LjU5OSAwLjU2MyAxNy4wNTkgMy41IDE2LjU5OUMzLjMxNCAxNi41OTkgMC45MzcgMjAuNSAyLjI3NiAyMC41IDkuNUMyMC41IDYuNDE5IDE4LjM4MSA1LjgxMyAxNS43MzEgNEMxNS43MzEgMi4xODcgMTQuODE3IDIuMTg3IDE0LjgxNyAyLjE4N0MxNC44MTcgMi4xODcgMTYuNTk5IDIuMTg3IDIwLjUgNC4yNzZDMjIuMTI1IDYuNDE5IDI0IDguMzE0IDI0IDEyLjVDMjQgMTYuNjg2IDIyLjEyNSAxOC4xOTggMjEuMDU1IDE4LjE5OFpNMjAuNSA4LjNEMjIuMTI1IDYuNDE5IDIwLjg4OCA0LjQ1OSAyMi4yMTQgM0MyMi4yMTQgMi4xMjEgMjEuMDU1IDQuMjc2IDE4LjM4MSA0LjI3NkMxOC4zODEgNi40MTkgMTYuNTk5IDcuMjU2IDE0LjgxNyA3LjI1NkMxNC44MTcgOC4zMTQgMTIuNSA4LjgxNCAxMi41IDguODE0QzEyLjUgOC44MTQgMTIuNSAzLjMxNCAxMi41IDQuMjU2QzEyLjUgMy4zMTQgMTQuODE3IDUuODEzIDE2LjU5OSA1LjgxM0MxOC4zODEgOC4zMTQgMjIuMTI1IDE0LjgxNyAyMi4xMjUgMjIuMTI1QzIyLjEyNSAxNi41OTkgMjAgMjAuNSA4LjNaIiBmaWxsPSIjMDdDMQZCIvPgo8L3N2Zz4K" mode="aspectFit"></image>
+        </view>
+        <text class="wechat-login-text">
+          {{wechatLoading ? '授权中...' : '微信快速登录'}}
+        </text>
+      </view>
+      
+      <!-- 授权状态提示 -->
+      <view class="auth-status" wx:if="{{wechatAuthStatus === 'denied'}}">
+        <text class="auth-status-text">需要授权用户信息才能登录</text>
+        <text class="auth-status-tip">请点击上方按钮重新授权</text>
+      </view>
+    </view>
 
     <!-- 账号密码登录表单 -->
-    <view class="login-form">
+    <view class="login-form" wx:if="{{loginMethod === 'account'}}">
       <!-- 用户名输入 -->
       <view class="form-group">
         <view class="input-wrapper {{formErrors.username ? 'error' : ''}}">

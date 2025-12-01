@@ -257,6 +257,138 @@ class Auth {
   static generateToken(userId) {
     return `token_${userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
+
+  /**
+   * 处理微信登录用户信息
+   * @param {Object} wechatUserInfo 微信用户信息
+   * @param {Object} supabase Supabase客户端实例
+   * @returns {Promise<Object>} 登录结果
+   */
+  static async handleWechatLogin(wechatUserInfo, supabase) {
+    try {
+      const { openid, userInfo } = wechatUserInfo
+      
+      if (!openid) {
+        throw new Error('微信登录失败：缺少用户标识')
+      }
+
+      // 查询数据库中是否已存在该微信用户
+      const { data: existingUser, error: queryError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('openid', openid)
+        .single()
+
+      let userRecord
+      
+      if (queryError && queryError.code !== 'PGRST116') {
+        throw new Error('查询用户失败：' + queryError.message)
+      }
+
+      if (existingUser) {
+        // 用户已存在，更新登录信息
+        const { data: updatedUser, error: updateError } = await supabase
+          .from('users')
+          .update({
+            last_login: new Date().toISOString(),
+            login_count: (existingUser.login_count || 0) + 1,
+            avatar: userInfo.avatarUrl || existingUser.avatar,
+            name: userInfo.nickName || existingUser.name,
+            language: userInfo.language || existingUser.language,
+            status: 'active'
+          })
+          .eq('id', existingUser.id)
+          .select()
+          .single()
+
+        if (updateError) {
+          throw new Error('更新用户信息失败：' + updateError.message)
+        }
+        
+        userRecord = updatedUser
+      } else {
+        // 新用户，创建记录
+        const { data: newUser, error: insertError } = await supabase
+          .from('users')
+          .insert({
+            openid: openid,
+            username: `wx_${openid.substring(0, 8)}`,
+            name: userInfo.nickName || '微信用户',
+            avatar: userInfo.avatarUrl || '',
+            language: userInfo.language || 'zh_CN',
+            login_type: 'wechat',
+            status: 'active',
+            login_count: 1,
+            last_login: new Date().toISOString(),
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single()
+
+        if (insertError) {
+          throw new Error('创建用户失败：' + insertError.message)
+        }
+        
+        userRecord = newUser
+      }
+
+      // 构建用户登录信息
+      const loginUserInfo = {
+        id: userRecord.id,
+        openid: openid,
+        username: userRecord.username,
+        name: userRecord.name,
+        avatar: userRecord.avatar,
+        language: userRecord.language,
+        loginType: 'wechat',
+        loginTime: new Date().toISOString(),
+        token: this.generateToken(userRecord.id)
+      }
+
+      // 保存登录信息
+      this.saveUserLogin(loginUserInfo, true)
+
+      return {
+        success: true,
+        user: loginUserInfo,
+        isNewUser: !existingUser
+      }
+
+    } catch (error) {
+      console.error('微信登录处理失败:', error)
+      return {
+        success: false,
+        message: error.message || '微信登录失败'
+      }
+    }
+  }
+
+  /**
+   * 获取微信用户信息（兼容方法）
+   * @returns {Object|null} 微信用户信息
+   */
+  static getWechatUser() {
+    const userInfo = this.getCurrentUser()
+    return userInfo && userInfo.loginType === 'wechat' ? userInfo : null
+  }
+
+  /**
+   * 检查是否为微信登录用户
+   * @returns {boolean} 是否为微信登录用户
+   */
+  static isWechatUser() {
+    const userInfo = this.getCurrentUser()
+    return userInfo && userInfo.loginType === 'wechat'
+  }
+
+  /**
+   * 检查是否为账号登录用户
+   * @returns {boolean} 是否为账号登录用户
+   */
+  static isAccountUser() {
+    const userInfo = this.getCurrentUser()
+    return userInfo && userInfo.loginType === 'account'
+  }
 }
 
 module.exports = { Auth }
