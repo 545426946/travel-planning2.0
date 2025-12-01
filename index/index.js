@@ -45,7 +45,7 @@ Page({
         activeIcon: 'location-filled'
       },
       { 
-        text: '个人主页', 
+        text: '我的', 
         icon: 'person',
         activeIcon: 'person-filled'
       }
