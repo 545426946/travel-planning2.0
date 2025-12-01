@@ -13,7 +13,7 @@ page {
 
 /* 顶部标题 */
 .header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #05397e 0%, #024c88 100%);
   padding: 40rpx 30rpx 50rpx;
   color: #fff;
 }
@@ -238,6 +238,9 @@ page {
 }
 
 .btn-cancel {
+  display: flex;
+  justify-content: center; /* 水平居中 */
+  align-items: center;     /* 垂直居中 */
   flex: 1;
   height: 88rpx;
   line-height: 88rpx;
@@ -249,10 +252,13 @@ page {
 }
 
 .btn-submit {
+  display: flex;
+  justify-content: center; /* 水平居中 */
+  align-items: center;     /* 垂直居中 */
   flex: 2;
   height: 88rpx;
   line-height: 88rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #011d9b 0%, #00038d 100%);
   color: #fff;
   border-radius: 44rpx;
   font-size: 30rpx;
