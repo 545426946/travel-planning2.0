@@ -134,9 +134,10 @@ Page({
         image: 'https://picsum.photos/seed/plan2/400/240.jpg'
       }
     ]
+    , _idRefreshAttempted: false
   },
 
-  onLoad() {
+  async onLoad() {
     console.log('页面加载完成');
     console.log('当前Tab:', this.data.currentTab);
     console.log('Tab数据:', this.data.tabs);
@@ -144,10 +145,48 @@ Page({
     // 获取用户信息
     const userInfo = Auth.getCurrentUser()
     if (userInfo) {
-      this.setData({ userInfo })
-      // 加载用户统计信息
+      console.log('当前用户信息:', userInfo)
+      const numericId = Auth.getCurrentUserId()
+      if (!numericId) {
+        console.warn('用户ID无效，尝试刷新用户信息')
+        if (this.data._idRefreshAttempted) {
+          console.error('无法获取正确的用户ID')
+          return
+        }
+        this.setData({ _idRefreshAttempted: true })
+        const updatedUserInfo = await Auth.refreshUserInfo(supabase)
+        if (updatedUserInfo && updatedUserInfo.id) {
+          this.setData({ userInfo: updatedUserInfo })
+          console.log('已更新用户信息:', updatedUserInfo)
+        } else {
+          // 直接通过 openid 查询一次用户ID
+          try {
+            const res = await supabase
+              .from('users')
+              .select('*')
+              .eq('openid', userInfo.openid)
+              .single()
+            if (res && res.data && res.data.id) {
+              const fixed = { ...userInfo, id: res.data.id, username: res.data.username || userInfo.username, name: res.data.name || userInfo.name, avatar: res.data.avatar || userInfo.avatar, language: res.data.language || userInfo.language }
+              this.setData({ userInfo: fixed, _idRefreshAttempted: false })
+              Auth.saveUserLogin(fixed, true)
+              console.log('通过openid修复用户ID:', fixed.id)
+            } else {
+              console.error('无法获取正确的用户ID')
+              wx.showToast({ title: '请重新登录以同步用户信息', icon: 'none' })
+              this.setData({ _idRefreshAttempted: false })
+              wx.navigateTo({ url: '/pages/login/login' })
+              return
+            }
+          } catch (e) {
+            console.error('根据openid修复用户ID失败', e)
+            return
+          }
+        }
+      } else {
+        this.setData({ userInfo })
+      }
       this.loadUserStats()
-      // 加载用户的行程数据
       this.loadUserTravelPlans()
     }
     
@@ -155,16 +194,66 @@ Page({
     this.loadDestinations()
   },
 
-  onShow() {
+  async onShow() {
     // 每次页面显示时检查用户登录状态
     const userInfo = Auth.getCurrentUser()
-    this.setData({ userInfo })
     if (userInfo) {
+      console.log('页面显示，用户信息:', userInfo)
+      const numericId = Auth.getCurrentUserId()
+      if (!numericId) {
+        console.warn('用户ID无效，尝试刷新用户信息')
+        if (this.data._idRefreshAttempted) {
+          console.error('无法获取正确的用户ID')
+          return
+        }
+        this.setData({ _idRefreshAttempted: true })
+        const updatedUserInfo = await Auth.refreshUserInfo(supabase)
+        if (updatedUserInfo && updatedUserInfo.id) {
+          try {
+            const AvatarManager = require('../utils/avatar').AvatarManager
+            const displayAvatar = await AvatarManager.getAvatarDisplayUrl(updatedUserInfo.id, updatedUserInfo)
+            updatedUserInfo.avatar = displayAvatar
+          } catch (e) {}
+          this.setData({ userInfo: updatedUserInfo })
+          console.log('已更新用户信息:', updatedUserInfo)
+        } else {
+          try {
+            const res = await supabase
+              .from('users')
+              .select('*')
+              .eq('openid', userInfo.openid)
+              .single()
+            if (res && res.data && res.data.id) {
+              const fixed = { ...userInfo, id: res.data.id, username: res.data.username || userInfo.username, name: res.data.name || userInfo.name, avatar: res.data.avatar || userInfo.avatar, language: res.data.language || userInfo.language }
+              try {
+                const AvatarManager = require('../utils/avatar').AvatarManager
+                const displayAvatar = await AvatarManager.getAvatarDisplayUrl(fixed.id, fixed)
+                fixed.avatar = displayAvatar
+              } catch (e) {}
+              this.setData({ userInfo: fixed, _idRefreshAttempted: false })
+              Auth.saveUserLogin(fixed, true)
+              console.log('通过openid修复用户ID:', fixed.id)
+            } else {
+              console.error('无法获取正确的用户ID')
+              wx.showToast({ title: '请重新登录以同步用户信息', icon: 'none' })
+              this.setData({ _idRefreshAttempted: false })
+              wx.navigateTo({ url: '/pages/login/login' })
+              return
+            }
+          } catch (e) {
+            console.error('根据openid修复用户ID失败', e)
+            return
+          }
+        }
+      } else {
+        this.setData({ userInfo })
+      }
       this.loadUserStats()
       this.loadUserTravelPlans()
     } else {
       // 未登录则清空用户相关数据
       this.setData({
+        userInfo: null,
         myTravelPlans: [],
         travelPlans: [],
         stats: { visitedPlaces: 0, favoriteRoutes: 0 }
@@ -214,19 +303,40 @@ Page({
       })
   },
 
-  // 加载行程数据（仅加载当前用户的行程）
+  // 加载用户行程数据（仅加载当前用户的行程）
   loadUserTravelPlans() {
-    const userId = Auth.getCurrentUserId()
+    const userInfo = Auth.getCurrentUser()
     
-    if (!userId) {
+    if (!userInfo) {
       console.log('用户未登录，跳过加载个人行程')
       return
     }
 
+    let userId = Auth.getCurrentUserId()
+    if (!userId) {
+      console.log('用户ID无效，尝试刷新用户信息')
+      if (this.data._idRefreshAttempted) {
+        console.log('无法获取有效的用户ID，跳过加载行程')
+        return
+      }
+      this.setData({ _idRefreshAttempted: true })
+      return Auth.refreshUserInfo(supabase).then(updated => {
+        const refreshedId = updated && updated.id
+        if (!refreshedId) {
+          console.log('无法获取有效的用户ID，跳过加载行程')
+          return
+        }
+        this.setData({ _idRefreshAttempted: false })
+        this.loadUserTravelPlans()
+      })
+    }
+
+    console.log('加载用户行程，用户ID:', userId)
+
     supabase
       .from('travel_plans')
       .select('*')
-      .eq('user_id', userId)  // 关键：只查询当前用户的行程
+      .eq('user_id', userId)  // 使用UUID格式的用户ID
       .eq('status', 'planned')
       .order('created_at', { ascending: false })
       .limit(10)
@@ -519,9 +629,10 @@ Page({
     const userId = Auth.getCurrentUserId()
     
     if (!userId) {
-      console.log('用户未登录，跳过加载统计信息')
+      console.log('用户未登录或用户ID无效，跳过加载统计信息')
       return
     }
+    console.log('加载用户统计信息，用户ID:', userId)
 
     try {
       // 并行查询用户统计数据（只查询当前用户的数据）
@@ -530,14 +641,14 @@ Page({
         supabase
           .from('travel_plans')
           .select('id', { count: 'exact', head: true })
-          .eq('user_id', userId)  // 关键：只统计当前用户的数据
+          .eq('user_id', userId)  // 使用UUID格式的用户ID
           .eq('status', 'completed'),
         
         // 查询用户的收藏数量
         supabase
           .from('user_favorites')
           .select('id', { count: 'exact', head: true })
-          .eq('user_id', userId)  // 关键：只统计当前用户的数据
+          .eq('user_id', userId)  // 使用UUID格式的用户ID
       ])
 
       const visitedPlaces = results[0].count || 0
@@ -629,14 +740,8 @@ Page({
 
   // 显示用户个人资料
   showUserProfile() {
-    const userInfo = this.data.userInfo;
-      const stats = this.data.stats;
-    
-    wx.showModal({
-      title: '个人资料',
-      content: '姓名：' + userInfo.name + '\n登录方式：' + (userInfo.loginType === 'wechat' ? '微信登录' : '账号登录') + '\n去过的地方：' + stats.visitedPlaces + '\n收藏路线：' + stats.favoriteRoutes,
-      showCancel: false,
-      confirmText: '知道了'
+    wx.navigateTo({
+      url: '/pages/profile/profile'
     })
   },
 

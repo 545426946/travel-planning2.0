@@ -1,5 +1,8 @@
 // utils/auth.js - 用户认证和权限管理工具
 
+const { supabase } = require('./supabase')
+const { AvatarManager } = require('./avatar')
+
 /**
  * 权限验证工具类
  */
@@ -51,8 +54,103 @@ class Auth {
    * @returns {string|number|null} 用户ID，未登录返回null
    */
   static getCurrentUserId() {
-    const user = this.getCurrentUser()
-    return user ? user.id : null
+0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const user = this.getCurrentUser()
+    if (!user) return null
+    const id = user.id
+    const isNumeric = typeof id === 'number' || (typeof id === 'string' && /^\d+$/.test(id))
+    const isUuid = typeof id === 'string' && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id)
+    return (isNumeric || isUuid) ? id : null
   }
 
   /**
@@ -138,6 +236,9 @@ class Auth {
 
     // 保存到本地存储
     try {
+      if (userInfo && typeof userInfo.username === 'string') {
+        userInfo.username = userInfo.username.replace(/^wx_wx_/, 'wx_')
+      }
       wx.setStorageSync('userInfo', userInfo)
       
       // 如果选择记住我，保存用户名
@@ -215,8 +316,10 @@ class Auth {
       let query = supabase.from('users').select('*')
       
       // 根据不同的登录标识查询用户
-      if (currentUser.id) {
-        query = query.eq('id', currentUser.id)
+      const id = currentUser.id
+      const idIsNumeric = typeof id === 'number' || (typeof id === 'string' && /^\d+$/.test(id))
+      if (idIsNumeric) {
+        query = query.eq('id', id)
       } else if (currentUser.openid) {
         query = query.eq('openid', currentUser.openid)
       } else if (currentUser.username) {
@@ -241,6 +344,23 @@ class Auth {
         // 更新存储
         this.saveUserLogin(updatedUserInfo)
         return updatedUserInfo
+      }
+
+      // 未查询到用户，且有 openid，尝试创建或修复用户记录
+      if (!data && !error && currentUser.openid) {
+        const minimalWechatInfo = {
+          openid: currentUser.openid,
+          userInfo: {
+            nickName: currentUser.name || '微信用户',
+            avatarUrl: currentUser.avatar || '',
+            language: currentUser.language || 'zh_CN'
+          }
+        }
+        const loginResult = await this.handleWechatLogin(minimalWechatInfo, supabase)
+        if (loginResult && loginResult.success && loginResult.user) {
+          this.saveUserLogin(loginResult.user)
+          return loginResult.user
+        }
       }
     } catch (error) {
       console.error('刷新用户信息失败:', error)
@@ -285,14 +405,32 @@ class Auth {
         throw new Error('查询用户失败：' + queryError.message)
       }
 
-      if (existingUser) {
+      if (existingUser && existingUser.id) {
         // 用户已存在，更新登录信息
+        let avatarUrl = existingUser.avatar || ''
+        let avatarType = existingUser.avatar_type || 'default'
+        
+        // 如果微信有头像且用户当前没有头像，或用户当前使用默认头像，则更新为微信头像
+        if (userInfo.avatarUrl && userInfo.avatarUrl.trim() !== '') {
+          if (!avatarUrl || avatarType === 'default') {
+            // 验证微信头像URL的有效性
+            if (userInfo.avatarUrl.startsWith('https://thirdwx.qlogo.cn/')) {
+              avatarUrl = userInfo.avatarUrl
+              avatarType = 'wechat'
+            } else {
+              // 如果不是标准微信头像URL，保持默认头像
+              console.warn('非标准微信头像URL:', userInfo.avatarUrl)
+            }
+          }
+        }
+
         const { data: updatedUser, error: updateError } = await supabase
           .from('users')
           .update({
             last_login: new Date().toISOString(),
             login_count: (existingUser.login_count || 0) + 1,
-            avatar: userInfo.avatarUrl || existingUser.avatar,
+            avatar: avatarUrl,
+            avatar_type: avatarType,
             name: userInfo.nickName || existingUser.name,
             language: userInfo.language || existingUser.language,
             status: 'active'
@@ -307,14 +445,38 @@ class Auth {
         
         userRecord = updatedUser
       } else {
-        // 新用户，创建记录
+        // 用户不存在或ID无效，创建新记录
+        console.warn('用户不存在或ID无效，创建新用户记录:', { existingUser })
+        
+        // 处理新用户的头像
+        let avatarUrl = ''
+        let avatarType = 'default'
+        
+        if (userInfo.avatarUrl && userInfo.avatarUrl.trim() !== '') {
+          // 验证微信头像URL的有效性
+          if (userInfo.avatarUrl.startsWith('https://thirdwx.qlogo.cn/')) {
+            avatarUrl = userInfo.avatarUrl
+            avatarType = 'wechat'
+          } else {
+            // 如果不是标准微信头像URL，使用默认头像
+            console.warn('非标准微信头像URL，使用默认头像:', userInfo.avatarUrl)
+            avatarUrl = AvatarManager.generateDefaultAvatar(userInfo.nickName || '微信用户')
+            avatarType = 'default'
+          }
+        } else {
+          // 没有微信头像，生成默认头像
+          avatarUrl = AvatarManager.generateDefaultAvatar(userInfo.nickName || '微信用户')
+          avatarType = 'default'
+        }
+
         const { data: newUser, error: insertError } = await supabase
           .from('users')
           .insert({
             openid: openid,
-            username: `wx_${openid.substring(0, 8)}`,
+            username: `wx_${openid.replace(/^wx_/, '').substring(0, 8)}`,
             name: userInfo.nickName || '微信用户',
-            avatar: userInfo.avatarUrl || '',
+            avatar: avatarUrl,
+            avatar_type: avatarType,
             language: userInfo.language || 'zh_CN',
             login_type: 'wechat',
             status: 'active',

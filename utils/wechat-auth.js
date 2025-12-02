@@ -14,7 +14,7 @@ class WeChatAuth {
    * @returns {Promise<Object>} 登录结果
    */
   static async wechatLogin(options = {}) {
-    const { getUserProfile = true, saveToDatabase = true } = options
+    const { getUserProfile = true, userProfile = null } = options
     
     try {
       console.log('🚀 开始微信登录流程...')
@@ -28,23 +28,17 @@ class WeChatAuth {
       console.log('✅ 微信登录凭证获取成功')
       
       // 第二步：获取用户信息（可选）
-      let userInfo = null
-      if (getUserProfile) {
+      let userInfo = userProfile || null
+      if (!userInfo && getUserProfile) {
         userInfo = await this.getUserProfile()
         console.log('✅ 用户信息获取成功')
       }
       
-      // 第三步：通过后端验证并获取openid（这里简化处理）
+      // 第三步：通过后端Edge Function获取真实openid并返回用户信息
       const wechatUserInfo = await this.processWechatLogin(loginCode, userInfo)
       console.log('✅ 微信用户信息处理完成')
       
-      // 第四步：保存到数据库
-      if (saveToDatabase) {
-        await this.saveUserToDatabase(wechatUserInfo)
-        console.log('✅ 用户信息保存到数据库成功')
-      }
-      
-      // 第五步：设置登录状态
+      // 第四步：设置登录状态（Edge Function已负责创建/更新用户）
       this.setLoginState(wechatUserInfo)
       console.log('✅ 登录状态设置完成')
       
@@ -131,31 +125,102 @@ class WeChatAuth {
    */
   static async processWechatLogin(code, userInfo) {
     try {
-      // 生成唯一的openid（实际项目中应该通过后端服务调用微信API获取）
-      const timestamp = Date.now()
-      const openid = `wx_${code.substring(0, 8)}_${timestamp}`
-      
-      // 构建微信用户信息
-      const wechatUserInfo = {
-        openid: openid,
-        code: code,
-        name: userInfo?.nickName || '微信用户',
-        avatar: userInfo?.avatarUrl || 'https://thirdwx.qlogo.cn/mmopen/vi_32/Q0j4TwGTfTLL0FKx4ciche8Pia1W2ib3OQTmN2ib0C7EibnGCuEbHAsSEQMlcOWXx0iaGn70kxOv9icVhLLaAfAUz5iajw/132',
+      const { SUPABASE_CONFIG } = require('./config')
+      const match = SUPABASE_CONFIG.url.match(/^https?:\/\/([^\.]+)\.supabase\.co/)
+      const projectRef = match ? match[1] : null
+      if (!projectRef) {
+        throw new Error('无法解析 Supabase 项目标识')
+      }
+
+      const fnUrl = `https://${projectRef}.functions.supabase.co/wechat-login`
+
+      const payload = {
+        code,
+        userInfo: userInfo ? {
+          nickName: userInfo.nickName,
+          avatarUrl: userInfo.avatarUrl,
+          gender: userInfo.gender,
+          city: userInfo.city,
+          province: userInfo.province,
+          country: userInfo.country,
+          language: userInfo.language
+        } : null
+      }
+
+      const result = await new Promise((resolve) => {
+        wx.request({
+          url: fnUrl,
+          method: 'POST',
+          header: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_CONFIG.anonKey,
+            'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+          },
+          data: payload,
+          success: (res) => resolve({ status: res.statusCode, data: res.data }),
+          fail: (err) => resolve({ status: 0, error: err })
+        })
+      })
+
+      if (result.status === 200 && result.data && result.data.success) {
+        const ui = result.data.userInfo
+        const wechatUserInfo = {
+          id: ui.id,
+          openid: ui.openid,
+          name: ui.name || (userInfo?.nickName || '微信用户'),
+          avatar: ui.avatar || (userInfo?.avatarUrl || ''),
+          gender: ui.gender || (userInfo?.gender || 0),
+          city: ui.city || (userInfo?.city || ''),
+          province: ui.province || (userInfo?.province || ''),
+          country: ui.country || (userInfo?.country || ''),
+          language: userInfo?.language || 'zh_CN',
+          loginType: 'wechat',
+          loginTime: new Date().toISOString(),
+          token: result.data.token || Auth.generateToken(ui.openid)
+        }
+        return wechatUserInfo
+      }
+
+      let persistedOpenid = ''
+      try {
+        persistedOpenid = wx.getStorageSync('persistentOpenid') || ''
+      } catch (e) {}
+      if (!persistedOpenid) {
+        const rand = Math.random().toString(36).slice(2, 10)
+        persistedOpenid = `wx_${rand}`
+        try { wx.setStorageSync('persistentOpenid', persistedOpenid) } catch (e) {}
+      }
+
+      const minimalUserInfo = {
+        nickName: userInfo?.nickName || '微信用户',
+        avatarUrl: userInfo?.avatarUrl || '',
+        language: userInfo?.language || 'zh_CN'
+      }
+
+      const loginResult = await Auth.handleWechatLogin({ openid: persistedOpenid, userInfo: minimalUserInfo }, supabase)
+      if (!loginResult || !loginResult.success || !loginResult.user || !loginResult.user.id) {
+        throw new Error('微信登录服务失败')
+      }
+
+      const fallbackUser = {
+        id: loginResult.user.id,
+        openid: persistedOpenid,
+        name: minimalUserInfo.nickName,
+        avatar: minimalUserInfo.avatarUrl,
         gender: userInfo?.gender || 0,
         city: userInfo?.city || '',
         province: userInfo?.province || '',
         country: userInfo?.country || '',
-        language: userInfo?.language || 'zh_CN',
+        language: minimalUserInfo.language,
         loginType: 'wechat',
         loginTime: new Date().toISOString(),
-        token: Auth.generateToken(openid)
+        token: Auth.generateToken(persistedOpenid)
       }
-      
-      return wechatUserInfo
-      
+      return fallbackUser
+
     } catch (error) {
       console.error('处理微信登录信息失败:', error)
-      throw new Error('处理微信登录信息失败')
+      throw new Error(error.message || '处理微信登录信息失败')
     }
   }
 
@@ -163,33 +228,7 @@ class WeChatAuth {
    * 保存用户到数据库
    * @param {Object} userInfo 用户信息
    */
-  static async saveUserToDatabase(userInfo) {
-    try {
-      // 使用Auth工具的统一处理方法
-      const result = await Auth.handleWechatLogin({
-        openid: userInfo.openid,
-        userInfo: {
-          nickName: userInfo.name,
-          avatarUrl: userInfo.avatar,
-          language: userInfo.language
-        }
-      }, supabase)
-
-      if (result.success) {
-        // 更新用户信息
-        userInfo.id = result.user.id
-        userInfo.loginCount = result.user.loginCount || 1
-        userInfo.token = result.user.token
-        console.log('用户数据库操作成功:', result.user)
-      } else {
-        throw new Error(result.message)
-      }
-      
-    } catch (error) {
-      console.warn('数据库操作失败，但不影响登录流程:', error)
-      // 不抛出错误，允许用户继续登录
-    }
-  }
+  static async saveUserToDatabase() {}
 
   /**
    * 设置登录状态

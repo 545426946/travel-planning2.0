@@ -53,8 +53,11 @@ Page({
 
   // 加载行程列表
   async loadTravelPlans() {
-    const userId = Auth.getCurrentUserId()
-    if (!userId) return
+    const userInfo = Auth.getCurrentUser()
+    if (!userInfo || !userInfo.id) return
+
+    const userId = userInfo.id
+    console.log('加载行程列表，用户ID:', userId)
 
     // 防重复加载：使用防抖机制
     const now = Date.now()
@@ -78,8 +81,10 @@ Page({
 
   // 实际执行加载的方法
   async doLoadTravelPlans() {
-    const userId = Auth.getCurrentUserId()
-    if (!userId) return
+    const userInfo = Auth.getCurrentUser()
+    if (!userInfo || !userInfo.id) return
+
+    const userId = userInfo.id
 
     this.setData({ 
       loading: true,
@@ -449,8 +454,10 @@ Page({
 
   // 清理重复ID数据的测试方法（仅用于调试，删除真正重复的记录）
   async cleanDuplicates() {
-    const userId = Auth.getCurrentUserId()
-    if (!userId) return
+    const userInfo = Auth.getCurrentUser()
+    if (!userInfo || !userInfo.id) return
+
+    const userId = userInfo.id
 
     try {
       // 获取所有行程数据

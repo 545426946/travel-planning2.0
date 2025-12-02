@@ -1,0 +1,131 @@
+<!-- pages/profile/profile.wxml - 用户个人资料页面 -->
+
+<view class="container">
+  <!-- 头部背景 -->
+  <view class="header-bg">
+    <view class="header-decoration">
+      <view class="decoration-circle circle-1"></view>
+      <view class="decoration-circle circle-2"></view>
+    </view>
+  </view>
+
+  <!-- 主要内容 -->
+  <view class="main-content">
+    <!-- 用户头像区域 -->
+    <view class="avatar-section">
+      <view class="avatar-container" bindtap="changeAvatar">
+        <image 
+          class="user-avatar" 
+          src="{{userInfo.avatar}}" 
+          mode="aspectFill"
+          binderror="onAvatarError"
+        ></image>
+        <view class="avatar-overlay">
+          <view class="camera-icon">📷</view>
+          <view class="avatar-tip">点击更换头像</view>
+        </view>
+      </view>
+      
+      <!-- 头像类型标签 -->
+      <view class="avatar-type-badge" wx:if="{{userInfo.avatar_type}}">
+        <text wx:if="{{userInfo.avatar_type === 'wechat'}}">微信头像</text>
+        <text wx:elif="{{userInfo.avatar_type === 'upload'}}">自定义头像</text>
+        <text wx:else>默认头像</text>
+      </view>
+    </view>
+
+    <!-- 用户基本信息 -->
+    <view class="info-section">
+      <view class="info-item">
+        <view class="info-label">用户名</view>
+        <view class="info-value">{{userInfo.username || '未设置'}}</view>
+      </view>
+      
+      <view class="info-item">
+        <view class="info-label">昵称</view>
+        <view class="info-value">{{userInfo.name || '未设置'}}</view>
+      </view>
+
+      <view class="info-item" wx:if="{{userInfo.email}}">
+        <view class="info-label">邮箱</view>
+        <view class="info-value">{{userInfo.email}}</view>
+      </view>
+
+      <view class="info-item" wx:if="{{userInfo.phone}}">
+        <view class="info-label">手机号</view>
+        <view class="info-value">{{userInfo.phone}}</view>
+      </view>
+
+      <view class="info-item">
+        <view class="info-label">登录类型</view>
+        <view class="info-value">
+          <text wx:if="{{userInfo.loginType === 'wechat'}}">微信登录</text>
+          <text wx:elif="{{userInfo.loginType === 'account'}}">账号登录</text>
+          <text wx:else>未知</text>
+        </view>
+      </view>
+
+      <view class="info-item">
+        <view class="info-label">登录次数</view>
+        <view class="info-value">{{userInfo.login_count || 0}} 次</view>
+      </view>
+
+      <view class="info-item" wx:if="{{userInfo.last_login}}">
+        <view class="info-label">最后登录</view>
+        <view class="info-value">{{formatDate(userInfo.last_login)}}</view>
+      </view>
+    </view>
+
+    <!-- 操作按钮区域 -->
+    <view class="action-section">
+      <button 
+        class="action-btn primary" 
+        bindtap="changeAvatar"
+        loading="{{avatarLoading}}"
+      >
+        <text wx:if="{{!avatarLoading}}">更换头像</text>
+        <text wx:else>上传中...</text>
+      </button>
+
+      <button 
+        class="action-btn" 
+        bindtap="changeNickname"
+        loading="{{nicknameLoading}}"
+      >
+        <text wx:if="{{!nicknameLoading}}">修改昵称</text>
+        <text wx:else>修改中...</text>
+      </button>
+
+      <button 
+        class="action-btn secondary" 
+        bindtap="setWechatAvatar"
+        wx:if="{{userInfo.loginType === 'wechat'}}"
+        loading="{{wechatAvatarLoading}}"
+      >
+        <text wx:if="{{!wechatAvatarLoading}}">使用微信头像</text>
+        <text wx:else>设置中...</text>
+      </button>
+
+      <button 
+        class="action-btn danger" 
+        bindtap="resetToDefaultAvatar"
+        loading="{{resetLoading}}"
+      >
+        <text wx:if="{{!resetLoading}}">使用默认头像</text>
+        <text wx:else>重置中...</text>
+      </button>
+    </view>
+
+    <!-- 头像操作说明 -->
+    <view class="tips-section">
+      <view class="tips-title">📝 头像说明</view>
+      <view class="tips-list">
+        <view class="tip-item">• 点击头像可以从相册选择新头像</view>
+        <view class="tip-item">• 支持拍照上传头像</view>
+        <view class="tip-item">• 头像会自动压缩优化</view>
+        <view class="tip-item">• 支持的格式：JPG、PNG、GIF、WebP</view>
+        <view class="tip-item">• 文件大小限制：5MB</view>
+      </view>
+    </view>
+  </view>
+</view>

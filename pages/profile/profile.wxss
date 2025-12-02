@@ -1,0 +1,315 @@
+/* pages/profile/profile.wxss - 用户个人资料页面样式 */
+
+page {
+  height: 100vh;
+  background: linear-gradient(135deg,rgb(131, 179, 237) 0%,rgb(102, 234, 175) 100%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+}
+
+.container {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 头部背景 */
+.header-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 400rpx;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.header-decoration {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.decoration-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  animation: float 6s ease-in-out infinite;
+}
+
+.circle-1 {
+  width: 200rpx;
+  height: 200rpx;
+  top: -100rpx;
+  left: -50rpx;
+  animation-delay: 0s;
+}
+
+.circle-2 {
+  width: 150rpx;
+  height: 150rpx;
+  top: -50rpx;
+  right: -30rpx;
+  animation-delay: 2s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0rpx); }
+  50% { transform: translateY(-20rpx); }
+}
+
+/* 主要内容区域 */
+.main-content {
+  flex: 1;
+  position: relative;
+  z-index: 2;
+  padding: 0 40rpx 40rpx;
+}
+
+/* 头像区域 */
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 120rpx 0 60rpx;
+}
+
+.avatar-container {
+  position: relative;
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 100rpx;
+  overflow: hidden;
+  margin-bottom: 20rpx;
+  border: 6rpx solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 15rpx 35rpx rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.avatar-container:hover {
+  transform: scale(1.05);
+  box-shadow: 0 20rpx 40rpx rgba(0, 0, 0, 0.2);
+}
+
+.user-avatar {
+  width: 100%;
+  height: 100%;
+  background-color: #f0f0f0;
+}
+
+.avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.avatar-container:hover .avatar-overlay,
+.avatar-container:active .avatar-overlay {
+  opacity: 1;
+}
+
+.camera-icon {
+  font-size: 50rpx;
+  margin-bottom: 10rpx;
+}
+
+.avatar-tip {
+  color: white;
+  font-size: 24rpx;
+  text-align: center;
+}
+
+.avatar-type-badge {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  color: #667eea;
+  font-weight: 500;
+  box-shadow: 0 5rpx 15rpx rgba(0, 0, 0, 0.1);
+}
+
+/* 信息区域 */
+.info-section {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 25rpx;
+  padding: 40rpx 30rpx;
+  margin-bottom: 40rpx;
+  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10rpx);
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 25rpx 0;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 30rpx;
+  color: #666;
+  font-weight: 500;
+  min-width: 150rpx;
+}
+
+.info-value {
+  font-size: 30rpx;
+  color: #333;
+  text-align: right;
+  flex: 1;
+  font-weight: 400;
+}
+
+/* 操作按钮区域 */
+.action-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  margin-bottom: 40rpx;
+}
+
+.action-btn {
+  width: 100%;
+  height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn::after {
+  display: none;
+}
+
+.action-btn.primary {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 10rpx 25rpx rgba(102, 126, 234, 0.3);
+}
+
+.action-btn.primary:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 5rpx 15rpx rgba(102, 126, 234, 0.3);
+}
+
+.action-btn.secondary {
+  background: linear-gradient(45deg, #07C160, #06AE56);
+  color: white;
+  box-shadow: 0 10rpx 25rpx rgba(7, 193, 96, 0.3);
+}
+
+.action-btn.secondary:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 5rpx 15rpx rgba(7, 193, 96, 0.3);
+}
+
+.action-btn.danger {
+  background: linear-gradient(45deg, #ff6b6b, #ff5252);
+  color: white;
+  box-shadow: 0 10rpx 25rpx rgba(255, 107, 107, 0.3);
+}
+
+.action-btn.danger:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 5rpx 15rpx rgba(255, 107, 107, 0.3);
+}
+
+.action-btn[disabled] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* 提示区域 */
+.tips-section {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 25rpx;
+  padding: 30rpx;
+  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10rpx);
+}
+
+.tips-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20rpx;
+  display: flex;
+  align-items: center;
+}
+
+.tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15rpx;
+}
+
+.tip-item {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* 加载状态 */
+.loading-spinner {
+  width: 40rpx;
+  height: 40rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.3);
+  border-top: 4rpx solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 15rpx;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 响应式设计 */
+@media (max-width: 750rpx) {
+  .container {
+    padding: 0 30rpx;
+  }
+  
+  .avatar-container {
+    width: 180rpx;
+    height: 180rpx;
+    border-radius: 90rpx;
+  }
+  
+  .info-label {
+    font-size: 28rpx;
+    min-width: 120rpx;
+  }
+  
+  .info-value {
+    font-size: 28rpx;
+  }
+  
+  .action-btn {
+    height: 80rpx;
+    font-size: 30rpx;
+  }
+}

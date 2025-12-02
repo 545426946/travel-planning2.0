@@ -323,9 +323,25 @@ page {
 
 .page-title {
   font-size: 48rpx;
-  font-weight: bold;
-  color: #ffffff;
-  letter-spacing: 1rpx;
+}
+
+/* 悬浮登录按钮（首页底部） */
+.floating-login-btn {
+  position: fixed;
+  right: 40rpx;
+  bottom: 140rpx; /* 高于底部导航 */
+  z-index: 1000;
+  padding: 14rpx 28rpx;
+  border-radius: 36rpx;
+  background: linear-gradient(45deg, #4A90E2, #6A8DFD);
+  color: #fff;
+  font-size: 28rpx;
+  font-weight: 600;
+  box-shadow: 0 8rpx 22rpx rgba(74, 144, 226, 0.28);
+}
+
+.floating-login-btn:active {
+  transform: scale(0.98);
 }
 
 .add-btn {

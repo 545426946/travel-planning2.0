@@ -4,13 +4,6 @@
     <view class="header-section">
       <view class="top-bar">
         <text class="logo">轻松旅行规划</text>
-        <view class="user-info" wx:if="{{userInfo}}" bindtap="showUserOptions">
-          <image class="user-avatar" src="{{userInfo.avatar}}" mode="aspectFill" binderror="onImageError"></image>
-          <text class="username">{{userInfo.name}}</text>
-        </view>
-        <view class="user-info" wx:else>
-          <button class="login-btn-header" bindtap="goToLogin">登录</button>
-        </view>
       </view>
       <view class="hero-section">
         <text class="hero-title">帮您轻松进行完美旅行规划</text>
@@ -65,6 +58,9 @@
       </view>
     </view>
   </scroll-view>
+
+  <!-- 悬浮登录按钮（仅未登录显示，不影响内容） -->
+  <button class="floating-login-btn" wx:if="{{!userInfo}}" bindtap="goToLogin">登录</button>
   
   <!-- 行程规划页 -->
   <scroll-view wx:if="{{currentTab === 1}}" class="scroll-area" scroll-y>

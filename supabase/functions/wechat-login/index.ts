@@ -178,7 +178,7 @@ serve(async (req) => {
     // 查询或创建用户
     console.log('🔍 查询或创建用户记录...')
     const { data: existingUser, error: fetchError } = await supabase
-      .from('app_users')
+      .from('users')
       .select('*')
       .eq('openid', openid)
       .single()
@@ -200,7 +200,7 @@ serve(async (req) => {
       // 更新最后登录时间
       console.log('🔄 更新用户登录信息...')
       const { error: updateError } = await supabase
-        .from('app_users')
+        .from('users')
         .update({
           last_login_time: new Date().toISOString()
         })
@@ -211,6 +211,15 @@ serve(async (req) => {
         // 不中断流程，继续返回用户信息
       } else {
         console.log('✅ 用户登录信息更新成功')
+      }
+
+      // 如用户名为空则设置默认用户名
+      if (!existingUser.username || existingUser.username.trim() === '') {
+        const defaultUsername = `wx_${openid.replace(/^wx_/, '').substring(0, 8)}`
+        await supabase
+          .from('users')
+          .update({ username: defaultUsername })
+          .eq('openid', openid)
       }
 
       finalUserInfo = {
@@ -235,7 +244,7 @@ serve(async (req) => {
         : `微信用户_${Math.floor(Math.random() * 10000)}`
       const avatar = (requestUserInfo && requestUserInfo.avatarUrl) 
         ? requestUserInfo.avatarUrl 
-        : 'https://thirdwx.qlogo.cn/mmopen/vi_32/POgEwh4mIHO4nibH0KlMECNjjGxQUl24cLiaEwdBbCHnElQzBf0x9Yc2icJ0Y9nSKhEXQnGHVicHjaNQ6GoAhjibcPA/132'
+        : ''
       
       console.log('新用户信息:')
       console.log('- 昵称:', nickname)
@@ -245,6 +254,7 @@ serve(async (req) => {
       
       const newUser = {
         openid: openid,
+        username: `wx_${openid.replace(/^wx_/, '').substring(0, 8)}`,
         name: nickname,
         avatar: avatar,
         gender: (requestUserInfo && requestUserInfo.gender) ? requestUserInfo.gender : 0,
@@ -258,7 +268,7 @@ serve(async (req) => {
       }
 
       const { data: createdUser, error: createError } = await supabase
-        .from('app_users')
+        .from('users')
         .insert(newUser)
         .select()
         .single()

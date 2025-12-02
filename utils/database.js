@@ -33,9 +33,15 @@ const db = {
     // 获取用户的行程（自动验证权限）
     getByUserId(userId, status = 'planned', limit = null) {
       // 权限验证：只能查询当前登录用户的数据
-      const currentUserId = Auth.getCurrentUserId()
-      if (!currentUserId || String(currentUserId) !== String(userId)) {
-        console.warn('权限验证失败：无法访问其他用户的行程数据')
+      const currentUser = Auth.getCurrentUser()
+      const currentUserId = currentUser ? currentUser.id : null
+      
+      if (!currentUserId || currentUserId !== userId) {
+        console.warn('权限验证失败：无法访问其他用户的行程数据', { 
+          currentUserId, 
+          requestedUserId: userId,
+          currentUser 
+        })
         return Promise.resolve({ data: [], error: { message: '无权访问' } })
       }
 
@@ -172,9 +178,13 @@ const db = {
     // 根据用户ID获取偏好（自动验证权限）
     getByUserId(userId) {
       // 权限验证
-      const currentUserId = Auth.getCurrentUserId()
-      if (!currentUserId || String(currentUserId) !== String(userId)) {
-        console.warn('权限验证失败：无法访问其他用户的偏好设置')
+      const currentUser = Auth.getCurrentUser()
+      const currentUserId = currentUser ? currentUser.id : null
+      if (!currentUserId || currentUserId !== userId) {
+        console.warn('权限验证失败：无法访问其他用户的偏好设置', { 
+          currentUserId, 
+          requestedUserId: userId 
+        })
         return Promise.resolve({ data: null, error: { message: '无权访问' } })
       }
 
@@ -189,7 +199,8 @@ const db = {
 
     // 创建或更新用户偏好（自动添加用户ID）
     upsert(preferencesData) {
-      const userId = Auth.getCurrentUserId()
+      const currentUser = Auth.getCurrentUser()
+      const userId = currentUser ? currentUser.id : null
       if (!userId) {
         return Promise.resolve({ data: null, error: { message: '用户未登录' } })
       }
@@ -214,19 +225,23 @@ const db = {
     // 获取用户收藏（自动验证权限）
     getUserFavorites(userId, type = null) {
       // 权限验证
-      const currentUserId = Auth.getCurrentUserId()
-      if (!currentUserId || String(currentUserId) !== String(userId)) {
-        console.warn('权限验证失败：无法访问其他用户的收藏')
+      const currentUser = Auth.getCurrentUser()
+      const currentUserId = currentUser ? currentUser.id : null
+      if (!currentUserId || currentUserId !== userId) {
+        console.warn('权限验证失败：无法访问其他用户的收藏', { 
+          currentUserId, 
+          requestedUserId: userId 
+        })
         return Promise.resolve({ data: [], error: { message: '无权访问' } })
       }
 
       let query = supabase
-        .from('favorites')
+        .from('user_favorites')
         .select('*')
         .eq('user_id', userId)
       
       if (type) {
-        query = query.eq('item_type', type)
+        query = query.eq('target_type', type)
       }
       
       return query
@@ -237,19 +252,23 @@ const db = {
 
     // 添加收藏（自动添加用户ID）
     add(favoriteData) {
-      const userId = Auth.getCurrentUserId()
+      const currentUser = Auth.getCurrentUser()
+      const userId = currentUser ? currentUser.id : null
       if (!userId) {
         return Promise.resolve({ data: null, error: { message: '用户未登录' } })
       }
 
-      // 强制设置为当前用户ID
+      // 强制设置为当前用户ID，并修正字段名
       const safeFavoriteData = {
-        ...favoriteData,
+        target_type: favoriteData.target_type || favoriteData.item_type,
+        target_id: favoriteData.target_id || favoriteData.item_id,
+        folder_id: favoriteData.folder_id,
+        note: favoriteData.note,
         user_id: userId
       }
 
       return supabase
-        .from('favorites')
+        .from('user_favorites')
         .insert(safeFavoriteData)
         .select()
         .then((result) => ({ data: result.data?.[0], error: result.error }))
@@ -259,18 +278,22 @@ const db = {
     // 删除收藏（自动验证权限）
     remove(userId, itemId, itemType) {
       // 权限验证
-      const currentUserId = Auth.getCurrentUserId()
-      if (!currentUserId || String(currentUserId) !== String(userId)) {
-        console.warn('权限验证失败：无法删除其他用户的收藏')
+      const currentUser = Auth.getCurrentUser()
+      const currentUserId = currentUser ? currentUser.id : null
+      if (!currentUserId || currentUserId !== userId) {
+        console.warn('权限验证失败：无法删除其他用户的收藏', { 
+          currentUserId, 
+          requestedUserId: userId 
+        })
         return Promise.resolve({ data: null, error: { message: '无权访问' } })
       }
 
       return supabase
-        .from('favorites')
+        .from('user_favorites')
         .delete()
         .eq('user_id', userId)
-        .eq('item_id', itemId)
-        .eq('item_type', itemType)
+        .eq('target_id', itemId)
+        .eq('target_type', itemType)
         .then((result) => ({ data: result.data, error: result.error }))
         .catch(error => ({ data: null, error }))
     }
@@ -280,7 +303,8 @@ const db = {
   qaPairs: {
     // 创建问答记录（自动添加用户ID）
     create(qaData) {
-      const userId = Auth.getCurrentUserId()
+      const currentUser = Auth.getCurrentUser()
+      const userId = currentUser ? currentUser.id : null
       if (!userId) {
         return Promise.resolve({ data: null, error: { message: '用户未登录' } })
       }
@@ -302,9 +326,13 @@ const db = {
     // 获取用户的问答历史（自动验证权限）
     getUserHistory(userId, limit = 20) {
       // 权限验证
-      const currentUserId = Auth.getCurrentUserId()
-      if (!currentUserId || String(currentUserId) !== String(userId)) {
-        console.warn('权限验证失败：无法访问其他用户的问答历史')
+      const currentUser = Auth.getCurrentUser()
+      const currentUserId = currentUser ? currentUser.id : null
+      if (!currentUserId || currentUserId !== userId) {
+        console.warn('权限验证失败：无法访问其他用户的问答历史', { 
+          currentUserId, 
+          requestedUserId: userId 
+        })
         return Promise.resolve({ data: [], error: { message: '无权访问' } })
       }
 

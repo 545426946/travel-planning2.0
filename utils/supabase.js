@@ -14,6 +14,7 @@ class QueryBuilder {
     this.selectColumns = '*'
     this.method = 'GET'
     this.body = null
+    this.isSingle = false
   }
 
   select(columns = '*') {
@@ -44,7 +45,73 @@ class QueryBuilder {
 
   single() {
     this.queryParams.push('limit=1')
-    return this
+    this.isSingle = true
+    const url = this.buildUrl()
+    const headers = {
+      'apikey': this.supabaseAnonKey,
+      'Authorization': `Bearer ${this.supabaseAnonKey}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
+
+    if (this.method === 'POST') {
+      headers['Prefer'] = 'return=representation'
+      if (this.method === 'POST' && this.body) {
+        headers['Prefer'] = 'return=representation,resolution=merge-duplicates'
+      }
+    } else if (this.method === 'PATCH') {
+      headers['Prefer'] = 'return=representation'
+    }
+
+    const requestOptions = {
+      url: url,
+      method: this.method,
+      header: headers
+    }
+
+    if (this.body && (this.method === 'POST' || this.method === 'PATCH')) {
+      requestOptions.data = this.body
+    }
+
+    if (this.method === 'GET') {
+      if (!url.includes('select=')) {
+        requestOptions.url += (url.includes('?') ? '&' : '?') + `select=${this.selectColumns}`
+      }
+    }
+
+    return new Promise((resolve) => {
+      wx.request({
+        ...requestOptions,
+        success: (res) => {
+          if (res.statusCode === 409) {
+            const errorObj = {
+              statusCode: res.statusCode,
+              status: '409',
+              code: '23505',
+              message: res.data?.message || 'duplicate key value violates unique constraint "unique_ai_travel_plan"',
+              details: res.data?.details || null
+            }
+            resolve({ data: null, error: errorObj })
+            return
+          }
+          let payload = res.data
+          if (this.isSingle && Array.isArray(payload)) {
+            payload = payload.length > 0 ? payload[0] : null
+          }
+          resolve({ data: payload, error: null })
+        },
+        fail: (err) => {
+          const errorObj = {
+            statusCode: err.statusCode || err.status,
+            status: err.statusCode ? String(err.statusCode) : err.status,
+            code: err.code,
+            message: err.message || err.errMsg || '请求失败',
+            details: err.details || null
+          }
+          resolve({ data: null, error: errorObj })
+        }
+      })
+    })
   }
 
   insert(data) {
@@ -124,8 +191,15 @@ class QueryBuilder {
         }
         
         // 正常成功
+        let payload = res.data
+        if (this.isSingle) {
+          if (Array.isArray(payload)) {
+            payload = payload.length > 0 ? payload[0] : null
+          }
+        }
+
         callback({ 
-          data: res.data, 
+          data: payload, 
           error: null
         })
       },

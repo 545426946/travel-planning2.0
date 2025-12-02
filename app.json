@@ -3,6 +3,7 @@
     "index/index",
     "pages/login/login",
     "pages/register/register",
+    "pages/profile/profile",
     "pages/ai-plan/ai-plan",
     "pages/ai-assistant/ai-assistant",
     "pages/travel-plans/travel-plans",

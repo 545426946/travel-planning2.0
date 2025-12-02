@@ -1,6 +1,7 @@
 // app.js
 const supabase = require('./utils/supabase').supabase
 const Auth = require('./utils/auth').Auth
+const { AvatarManager } = require('./utils/avatar').AvatarManager
 
 App({
   onLaunch() {
@@ -73,9 +74,9 @@ App({
             
             // 构建用户信息
             const finalUserInfo = {
-              id: userInfo?.id || timestamp,
+              id: userInfo?.id && (typeof userInfo.id === 'number' || (typeof userInfo.id === 'string' && /^\d+$/.test(userInfo.id))) ? userInfo.id : null,
               name: userInfo?.name || userInfo?.nickName || '微信用户',
-              avatar: userInfo?.avatar || userInfo?.avatarUrl || 'https://thirdwx.qlogo.cn/mmopen/vi_32/Q0j4TwGTfTLL0FKx4ciche8Pia1W2ib3OQTmN2ib0C7EibnGCuEbHAsSEQMlcOWXx0iaGn70kxOv9icVhLLaAfAUz5iajw/132',
+              avatar: userInfo?.avatar || userInfo?.avatarUrl || AvatarManager.generateDefaultAvatar(userInfo?.name || '用户'),
               token: loginRes.code,
               openid: openid,
               gender: userInfo?.gender || 0,
@@ -105,8 +106,9 @@ App({
                 const error = result.error;
                 if (error) {
                   console.warn('保存用户到数据库失败:', error)
-                } else if (data && data.length > 0) {
-                  finalUserInfo.id = data[0].id
+                } else if (data && (Array.isArray(data) ? data.length > 0 : data.id)) {
+                  const record = Array.isArray(data) ? data[0] : data
+                  finalUserInfo.id = record.id || finalUserInfo.id
                   console.log('用户信息已保存到数据库:', data[0])
                 }
                 
@@ -149,6 +151,58 @@ App({
     this.globalData.userInfo = null
     this.globalData.isLoggedIn = false
     console.log('退出登录')
+  },
+
+  /**
+   * 全局头像处理方法
+   */
+  async getValidAvatarUrl(userId, user = null) {
+    try {
+      return await AvatarManager.getAvatarDisplayUrl(userId, user)
+    } catch (error) {
+      console.error('获取头像URL失败:', error)
+      return AvatarManager.generateDefaultAvatar()
+    }
+  },
+
+  /**
+   * 处理头像加载错误
+   */
+  handleAvatarError(userName = '用户') {
+    return AvatarManager.generateDefaultAvatar(userName)
+  },
+
+  /**
+   * 更新用户头像
+   */
+  async updateUserAvatar(userId, avatarUrl, avatarType = 'upload') {
+    try {
+      const result = await supabase
+        .from('users')
+        .update({
+          avatar: avatarUrl,
+          avatar_type: avatarType,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        .select()
+        .single()
+
+      if (result.error) {
+        throw new Error(result.error.message)
+      }
+
+      return {
+        success: true,
+        data: result.data
+      }
+    } catch (error) {
+      console.error('更新用户头像失败:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
   },
 
   // 全局数据

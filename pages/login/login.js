@@ -2,11 +2,15 @@
 const supabase = require('../../utils/supabase').supabase
 const WeChatAuth = require('../../utils/wechat-auth').WeChatAuth
 const Auth = require('../../utils/auth').Auth
+const avatarModule = require('../../utils/avatar')
+const AvatarManager = avatarModule.AvatarManager
 
 console.log('🔍 模块导入检查:')
 console.log('  - supabase:', supabase ? '✅' : '❌')
 console.log('  - WeChatAuth:', WeChatAuth ? '✅' : '❌')
 console.log('  - Auth:', Auth ? '✅' : '❌')
+console.log('  - avatarModule:', avatarModule ? '✅' : '❌')
+console.log('  - AvatarManager:', AvatarManager ? '✅' : '❌')
 
 Page({
   data: {
@@ -136,12 +140,62 @@ Page({
     this.setData({ wechatLoading: true })
     
     try {
+      let preProfile = null
+      try {
+        preProfile = await WeChatAuth.getUserProfile()
+      } catch (e) {}
+      if (preProfile && preProfile.nickName) {
+        this.setData({ wechatAuthStatus: 'granted' })
+      }
       const result = await WeChatAuth.wechatLogin({
-        getUserProfile: true,
-        saveToDatabase: true
+        getUserProfile: false,
+        userProfile: preProfile
       })
 
-      if (result.success) {
+      if (result.success && result.userInfo) {
+        let avatarDisplayUrl = ''
+        
+        // 安全地获取头像显示URL
+        try {
+          if (result.userInfo.id) {
+            avatarDisplayUrl = await AvatarManager.getAvatarDisplayUrl(result.userInfo.id, result.userInfo)
+          } else {
+            // 如果没有用户ID，优先使用微信头像
+            if (preProfile && preProfile.avatarUrl) {
+              avatarDisplayUrl = preProfile.avatarUrl
+            } else {
+              avatarDisplayUrl = AvatarManager.generateDefaultAvatar(result.userInfo.name || '用户')
+            }
+          }
+        } catch (avatarError) {
+          console.warn('头像处理失败，使用默认头像:', avatarError)
+          avatarDisplayUrl = AvatarManager.generateDefaultAvatar(result.userInfo.name || '用户')
+        }
+        
+        // 更新用户信息中的头像URL
+        result.userInfo.avatar = avatarDisplayUrl
+        
+        // 构建登录用户信息
+        const numericId = (() => {
+          const id = result.userInfo.id
+          return (typeof id === 'number' || (typeof id === 'string' && /^\d+$/.test(id))) ? id : null
+        })()
+        const normalizedUsername = (result.userInfo.username || `wx_${(result.userInfo.openid || '').replace(/^wx_/, '').substring(0, 8)}`).replace(/^wx_wx_/, 'wx_')
+        const loginUserInfo = {
+          id: numericId,
+          openid: result.userInfo.openid,
+          username: normalizedUsername,
+          name: result.userInfo.name || preProfile?.nickName || '微信用户',
+          avatar: avatarDisplayUrl,
+          avatar_type: (result.userInfo.avatar_type || (preProfile?.avatarUrl ? 'wechat' : 'default')),
+          loginType: 'wechat',
+          loginTime: new Date().toISOString(),
+          token: result.userInfo.token || Auth.generateToken(result.userInfo.openid)
+        }
+
+        // 保存登录状态
+        Auth.saveUserLogin(loginUserInfo, true)
+        
         wx.showToast({
           title: '微信登录成功',
           icon: 'success'
@@ -156,6 +210,9 @@ Page({
 
     } catch (error) {
       console.error('微信登录失败:', error)
+      if (this.data.wechatAuthStatus !== 'granted') {
+        wx.showToast({ title: '请授权获取微信头像与昵称', icon: 'none' })
+      }
       wx.showToast({
         title: error.message || '微信登录失败',
         icon: 'none',
@@ -208,13 +265,20 @@ Page({
       }
 
       // 更新最后登录时间和登录次数
-      await supabase
-        .from('users')
-        .update({ 
-          last_login: new Date().toISOString(),
-          login_count: (user.login_count || 0) + 1
-        })
-        .eq('id', user.id)
+      if (user && user.id) {
+        await supabase
+          .from('users')
+          .update({ 
+            last_login: new Date().toISOString(),
+            login_count: (user.login_count || 0) + 1
+          })
+          .eq('id', user.id)
+      } else {
+        console.warn('用户ID无效，跳过登录信息更新:', { user })
+      }
+
+      // 获取头像显示URL
+      const avatarDisplayUrl = await AvatarManager.getAvatarDisplayUrl(user.id, user)
 
       // 构建用户信息
       const userInfo = {
@@ -223,7 +287,8 @@ Page({
         username: user.username,
         email: user.email,
         phone: user.phone,
-        avatar: user.avatar || 'https://s1.aigei.com/src/img/png/40/401c73a8ae5043528a2ac0b2a41a1e13.png?imageMogr2/auto-orient/thumbnail/!282x282r/gravity/Center/crop/282x282/quality/85/%7CimageView2/2/w/282&e=2051020800&token=P7S2Xpzfz11vAkASLTkfHN7Fw-oOZBecqeJaxypL:lHzyX4Iuq2P-fNxU-t9ookog1Qo=',
+        avatar: avatarDisplayUrl,
+        avatar_type: user.avatar_type || 'default',
         loginType: 'account',
         loginTime: new Date().toISOString(),
         token: Auth.generateToken(user.id)
