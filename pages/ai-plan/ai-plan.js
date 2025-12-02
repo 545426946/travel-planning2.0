@@ -274,10 +274,6 @@ Page({
 
   // 显示规划结果并提供建议选项
   showPlanResultWithOptions(aiResponse, planData, formData) {
-    const content = aiResponse.length > 800 
-      ? aiResponse.substring(0, 800) + '...\n\n（完整内容请在保存后查看）' 
-      : aiResponse
-
     // 检查 planData 是否有效
     if (!planData) {
       console.warn('警告: planData 为空或无效')
@@ -308,9 +304,10 @@ Page({
       formData: formData
     }
 
+    // 直接显示生成完成的简单提示，不展示复杂的JSON内容
     wx.showModal({
       title: '🎉 AI规划完成',
-      content: content + '\n\n您是否要保存这个行程规划？',
+      content: `已为您完成${formData.destination}${formData.days}的详细行程规划，包含每日具体安排、费用预算和实用建议。是否保存此行程？`,
       confirmText: '保存行程',
       cancelText: '重新生成',
       success: (res) => {
@@ -341,13 +338,9 @@ Page({
 
   // 显示规划结果（原有方法保留作为备用）
   showPlanResult(aiResponse, planData) {
-    const content = aiResponse.length > 500 
-      ? aiResponse.substring(0, 500) + '...\n\n完整行程已保存，请在"我的行程"中查看' 
-      : aiResponse
-
     wx.showModal({
-      title: '🎉 AI规划成功',
-      content: content,
+      title: '🎉 AI规划完成',
+      content: '您的行程规划已生成完成！\n\n建议您保存此行程，以便在"我的行程"中查看详细内容。',
       showCancel: false,
       confirmText: '查看详情',
       success: (res) => {

@@ -270,38 +270,23 @@ Page({
 
   // 显示详细的规划结果
   showDetailedPlanResult(planData, aiResponse) {
-    const itinerary = this.parseItinerarySummary(planData.itinerary)
-    const content = `
-🗺️ AI为您规划的详细行程
+    const content = `🌟 AI已为您完成${planData.destination}${planData.totalDays}天的详细行程规划！
 
-📍 目的地：${planData.destination}
-📅 时间：${planData.startDate} 至 ${planData.endDate} (${planData.totalDays}天)
-💰 预算：¥${planData.budget} (实际估算：¥${this.calculateEstimatedCost(planData)})
-👥 人数：${planData.travelersCount}人
-🎯 主题：${planData.travelStyle}
+✨ 规划包含：
+• 每日详细行程安排
+• 完整费用预算分析  
+• 住宿和交通建议
+• 实用旅行贴士
 
-📋 详细行程：
-${itinerary}
+💰 预算约：¥${this.calculateEstimatedCost(planData)}
+👥 适合${planData.travelersCount}人
+🎯 风格：${planData.travelStyle}
 
-🚗 交通：${planData.transportation || '待安排'}
-🏨 住宿：${planData.accommodation || '待安排'}
-🍽️ 餐饮：包含在当地消费中
-
-⚠️ 费用说明：
-• 住宿按经济型酒店计算
-• 餐饮含当地特色和日常用餐
-• 景点门票按旺季价格估算
-• 交通含市内公交/地铁费用
-💡 温馨提示：
-• 具体费用因季节和个人消费习惯有差异
-• 建议提前预订热门景点门票
-• 请关注当地天气情况
-• 可根据实际需求调整行程
-    `.trim()
+建议保存此行程，方便随时查看详细内容。`
 
     wx.showModal({
-      title: '🌟 您的专属行程规划',
-      content,
+      title: '🌟 行程规划完成',
+      content: content,
       showCancel: true,
       cancelText: '重新规划',
       confirmText: '保存行程',
@@ -323,26 +308,14 @@ ${itinerary}
     } else if (result.data) {
       this.showDetailedPlanResult(result.data, result.aiResponse)
     } else {
-      // 旧版本处理逻辑
-      const content = result.aiResponse.length > 500 
-        ? result.aiResponse.substring(0, 500) + '...' 
-        : result.aiResponse
-
+      // 旧版本处理逻辑 - 简化提示，不显示复杂内容
       wx.showModal({
-        title: 'AI 行程规划结果',
-        content: content,
+        title: '🎉 AI规划完成',
+        content: 'AI已为您生成详细的行程规划！建议保存此行程以便查看完整内容。',
         showCancel: false,
-        confirmText: '复制完整内容',
+        confirmText: '知道了',
         success: () => {
-          wx.setClipboardData({
-            data: result.aiResponse,
-            success: () => {
-              wx.showToast({
-                title: '已复制到剪贴板',
-                icon: 'success'
-              })
-            }
-          })
+          console.log('用户已确认AI规划完成')
         }
       })
     }
