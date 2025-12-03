@@ -199,7 +199,7 @@ Page({
     const userInfo = Auth.getCurrentUser()
     if (userInfo) {
       console.log('页面显示，用户信息:', userInfo)
-      const numericId = Auth.getCurrentUserId()
+      const numericId = userInfo.id
       if (!numericId) {
         console.warn('用户ID无效，尝试刷新用户信息')
         if (this.data._idRefreshAttempted) {

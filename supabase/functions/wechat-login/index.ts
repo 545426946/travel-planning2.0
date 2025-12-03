@@ -41,13 +41,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: '服务器配置错误',
-          details: {
-            hasSupabaseUrl: !!supabaseUrl,
-            hasServiceKey: !!supabaseServiceKey,
-            hasWechatAppId: !!wechatAppId,
-            hasWechatSecret: !!wechatAppSecret
-          }
+          error: '服务器配置错误，请联系管理员',
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -62,13 +56,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: '服务器配置错误',
-          details: {
-            hasSupabaseUrl: !!supabaseUrl,
-            hasServiceKey: !!supabaseServiceKey,
-            hasWechatAppId: !!wechatAppId,
-            hasWechatSecret: !!wechatAppSecret
-          }
+          error: '微信服务暂时不可用，请稍后重试',
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -332,7 +332,7 @@ class AvatarManager {
         return avatarUrl
       } else {
         // 假设是相对路径，构建完整的URL
-        const supabaseUrl = 'https://hmnjuntvubqvbpeyqoxw.supabase.co'
+        const supabaseUrl = SUPABASE_CONFIG.url
         return `${supabaseUrl}/storage/v1/object/public/avatars/${avatarUrl}`
       }
     }
