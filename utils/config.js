@@ -49,7 +49,18 @@ const SUPABASE_CONFIG = {
 const APP_CONFIG = {
   version: '1.0.0',
   name: '旅行规划',
-  debug: true
+  debug: true,
+  
+  // 腾讯地图配置
+  TENCENT_MAP_KEY: 'Q2IBZ-3E2KB-TLGU4-NEFEU-74CLH-AUFY4', // 已配置的腾讯地图API密钥
+  
+  // 天气API配置
+  WEATHER_API_URL: 'https://ap-guangzhou.cloudmarket-apigw.com/service-6drgk6su/lundear/weather40d', // 华为云市场天气API
+  
+  // 功能开关
+  ENABLE_MAP: true,
+  ENABLE_WEATHER: true,
+  ENABLE_ROUTE: true
 }
 
 module.exports = {

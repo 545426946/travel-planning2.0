@@ -168,11 +168,47 @@ page {
   border-radius: 30rpx;
   overflow: hidden;
   box-shadow: 0 15rpx 35rpx rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.map-container:active {
+  transform: scale(0.98);
 }
 
 .map-image {
   width: 100%;
   min-height: 400rpx;
+}
+
+.map-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease;
+}
+
+.map-container:hover .map-overlay {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.map-overlay-text {
+  color: #ffffff;
+  font-size: 32rpx;
+  font-weight: 500;
+  margin-bottom: 20rpx;
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.3);
+}
+
+.map-overlay-icon {
+  font-size: 48rpx;
 }
 
 

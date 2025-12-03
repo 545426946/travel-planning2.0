@@ -56,6 +56,10 @@
 
     <!-- 操作按钮 -->
     <view class="action-bar">
+      <button class="action-btn" bindtap="showMapView">
+        <text class="icon">🗺️</text>
+        <text>地图</text>
+      </button>
       <button class="action-btn" bindtap="editPlan">
         <text class="icon">✏️</text>
         <text>编辑</text>

@@ -417,6 +417,14 @@ Page({
     });
   },
 
+  // 导航到地图页面
+  navigateToMap() {
+    console.log('进入地图页面');
+    wx.navigateTo({
+      url: '/pages/map-view/map-view'
+    });
+  },
+
   // AI 智能规划行程
   async aiPlanItinerary() {
     console.log('AI 智能规划行程');

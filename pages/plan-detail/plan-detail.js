@@ -1076,6 +1076,16 @@ Page({
     })
   },
 
+  // 显示地图视图
+  showMapView() {
+    const plan = this.data.plan
+    if (!plan) return
+
+    wx.navigateTo({
+      url: `/pages/map-view/map-view?planId=${plan.id}&destination=${encodeURIComponent(plan.destination)}`
+    })
+  },
+
   // 更改状态
   changeStatus() {
     const statusOptions = [

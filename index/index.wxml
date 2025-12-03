@@ -17,8 +17,12 @@
     
     <view class="map-section">
       <view class="section-title">探索地图</view>
-      <view class="map-container">
+      <view class="map-container" bindtap="navigateToMap">
         <image class="map-image" src="https://picsum.photos/seed/map/800/400.jpg" mode="widthFix"></image>
+        <view class="map-overlay">
+          <text class="map-overlay-text">点击进入地图</text>
+          <text class="map-overlay-icon">🗺️</text>
+        </view>
       </view>
     </view>
     
