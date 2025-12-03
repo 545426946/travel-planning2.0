@@ -21,7 +21,7 @@
           
           <view class="plan-badges">
             <view wx:if="{{plan.isAIGenerated}}" class="badge ai-badge">
-              <text>🤖 AI生成</text>
+              <text>AI生成</text>
             </view>
             <view class="badge status-badge">
               <text>{{getStatusText(plan.status)}}</text>

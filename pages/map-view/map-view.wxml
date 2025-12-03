@@ -1,0 +1,83 @@
+<!--pages/map-view/map-view.wxml-->
+<view class="map-container">
+  <!-- 地图控件栏 -->
+  <view class="map-header">
+    <view class="header-left" bindtap="onBack">
+      <text class="icon">←</text>
+      <text class="title">地图导航</text>
+    </view>
+    
+    <view class="header-right">
+      <text class="route-toggle {{showRoute ? 'active' : ''}}" bindtap="toggleRoute">
+        {{showRoute ? '隐藏路线' : '显示路线'}}
+      </text>
+    </view>
+  </view>
+
+  <!-- 地图主体 -->
+  <map 
+    id="travelMap"
+    class="travel-map"
+    longitude="{{longitude}}"
+    latitude="{{latitude}}"
+    scale="{{scale}}"
+    markers="{{markers}}"
+    polyline="{{showRoute ? polyline : []}}"
+    include-points="{{includePoints}}"
+    show-location="true"
+    bindtap="onMapTap"
+    bindmarkertap="onMarkerTap"
+    bindcontroltap="onControlTap"
+  >
+    <!-- 地图控件 -->
+    <cover-view class="map-controls">
+      <cover-view class="control-btn" bindtap="getCurrentLocation">
+        <cover-view class="control-icon-text">📍</cover-view>
+        <cover-view class="control-text">定位</cover-view>
+      </cover-view>
+      
+      <cover-view class="control-btn" bindtap="toggleRoute">
+        <cover-view class="control-icon-text">🗺️</cover-view>
+        <cover-view class="control-text">路线</cover-view>
+      </cover-view>
+    </cover-view>
+
+    <!-- 天气信息 -->
+    <cover-view class="weather-info" wx:if="{{weatherInfo}}">
+      <cover-view class="weather-content">
+        <cover-view class="weather-icon">{{weatherInfo.icon}}</cover-view>
+        <cover-view class="weather-details">
+          <cover-view class="weather-city">{{weatherInfo.city}}</cover-view>
+          <cover-view class="weather-temp">{{weatherInfo.temperature}}°C</cover-view>
+          <cover-view class="weather-desc">{{weatherInfo.weather}}</cover-view>
+        </cover-view>
+      </cover-view>
+    </cover-view>
+  </map>
+
+  <!-- 行程信息面板 -->
+  <view class="route-info" wx:if="{{showRoute && markers.length > 0}}">
+    <view class="route-header">
+      <text class="route-title">行程路线</text>
+      <text class="route-count">{{markers.length}}个地点</text>
+    </view>
+    
+    <scroll-view class="route-list" scroll-y="true">
+      <view class="route-item" wx:for="{{markers}}" wx:key="id">
+        <view class="item-marker">{{item.callout.content}}</view>
+        <view class="item-details">
+          <text class="item-title">{{item.title}}</text>
+          <text class="item-coords">{{item.latitude.toFixed(4)}}, {{item.longitude.toFixed(4)}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-mask" wx:if="{{loading}}">
+    <view class="loading-content">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+  </view>
+</view>

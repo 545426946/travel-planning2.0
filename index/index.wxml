@@ -35,7 +35,7 @@
     </view>
     
     <view class="recommend-section">
-      <view class="section-title">AI 推荐路线</view>
+      <view class="section-title">AI 智能规划路线</view>
       <scroll-view class="horizontal-scroll" scroll-x>
         <view class="route-card-container">
           <view wx:for="{{aiRoutes}}" wx:key="index" class="route-card">

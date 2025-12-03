@@ -1,0 +1,319 @@
+/* pages/map-view/map-view.wxss */
+
+.map-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  background-color: #f5f5f5;
+}
+
+/* 顶部标题栏 */
+.map-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 88rpx;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30rpx;
+  z-index: 999;
+  border-bottom: 1rpx solid #eee;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.header-left .icon {
+  font-size: 36rpx;
+  color: #333;
+  font-weight: bold;
+}
+
+.header-left .title {
+  font-size: 32rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.header-right .route-toggle {
+  font-size: 28rpx;
+  color: #666;
+  padding: 12rpx 24rpx;
+  border-radius: 20rpx;
+  background-color: #f5f5f5;
+  transition: all 0.3s ease;
+}
+
+.header-right .route-toggle.active {
+  color: #fff;
+  background-color: #007AFF;
+}
+
+/* 地图容器 */
+.travel-map {
+  width: 100%;
+  height: 100%;
+}
+
+/* 地图控件 */
+.map-controls {
+  position: absolute;
+  right: 30rpx;
+  top: 120rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  z-index: 998;
+}
+
+.control-btn {
+  width: 80rpx;
+  height: 80rpx;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.control-btn:active {
+  transform: scale(0.95);
+  background-color: #f0f0f0;
+}
+
+.control-icon,
+.control-icon-text {
+  width: 32rpx;
+  height: 32rpx;
+  margin-bottom: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  line-height: 1;
+}
+
+.control-text {
+  font-size: 20rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+/* 天气信息 */
+.weather-info {
+  position: absolute;
+  top: 120rpx;
+  left: 30rpx;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 20rpx;
+  padding: 24rpx 32rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  z-index: 998;
+  backdrop-filter: blur(10px);
+}
+
+.weather-content {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.weather-icon {
+  font-size: 48rpx;
+  line-height: 1;
+}
+
+.weather-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.weather-city {
+  font-size: 24rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.weather-temp {
+  font-size: 28rpx;
+  color: #007AFF;
+  font-weight: bold;
+}
+
+.weather-desc {
+  font-size: 22rpx;
+  color: #666;
+}
+
+/* 路线信息面板 */
+.route-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 50vh;
+  background-color: #fff;
+  border-radius: 30rpx 30rpx 0 0;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.1);
+  z-index: 997;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.route-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.route-title {
+  font-size: 32rpx;
+  color: #333;
+  font-weight: 600;
+}
+
+.route-count {
+  font-size: 24rpx;
+  color: #666;
+  background-color: #f0f0f0;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+}
+
+.route-list {
+  max-height: 60vh;
+  padding: 0 30rpx 30rpx;
+}
+
+.route-item {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.route-item:last-child {
+  border-bottom: none;
+}
+
+.item-marker {
+  background-color: #007AFF;
+  color: #fff;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 20rpx;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.item-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  min-width: 0;
+}
+
+.item-title {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-coords {
+  font-size: 22rpx;
+  color: #999;
+}
+
+/* 加载状态 */
+.loading-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-content {
+  background-color: #fff;
+  border-radius: 20rpx;
+  padding: 60rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid #f0f0f0;
+  border-top: 4rpx solid #007AFF;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 响应式适配 */
+@media (max-width: 750rpx) {
+  .weather-info {
+    top: 100rpx;
+    left: 20rpx;
+    padding: 20rpx 24rpx;
+  }
+  
+  .map-controls {
+    right: 20rpx;
+    top: 100rpx;
+  }
+  
+  .control-btn {
+    width: 70rpx;
+    height: 70rpx;
+  }
+  
+  .control-icon {
+    width: 28rpx;
+    height: 28rpx;
+  }
+}
