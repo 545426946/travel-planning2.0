@@ -66,35 +66,7 @@
   <!-- 悬浮登录按钮（仅未登录显示，不影响内容） -->
   <button class="floating-login-btn" wx:if="{{!userInfo}}" bindtap="goToLogin">登录</button>
   
-  <!-- 行程规划页 -->
-  <scroll-view wx:if="{{currentTab === 1}}" class="scroll-area" scroll-y>
-    <view class="planner-header">
-      <text class="page-title">行程规划</text>
-      <view class="button-row">
-        <button class="add-btn ai-plan-btn" bindtap="aiPlanItinerary">
-          <icon type="success" size="18" color="#fff"></icon>
-          AI规划
-        </button>
-        <button class="add-btn" bindtap="addNewPlan">
-          <icon type="add" size="18" color="#fff"></icon>
-          新建行程
-        </button>
-      </view>
-    </view>
-    <view class="plan-list">
-      <view wx:for="{{travelPlans}}" wx:key="index" class="plan-item">
-        <view class="plan-date">{{item.date}}</view>
-        <view class="plan-details">
-          <view class="location-row">
-            <icon type="location" size="16" color="#FF6B6B"></icon>
-            <text>{{item.from}} → {{item.to}}</text>
-          </view>
-          <text class="plan-time">{{item.time}}</text>
-        </view>
-        <icon type="arrowright" size="16" color="#ccc"></icon>
-      </view>
-    </view>
-  </scroll-view>
+
   
   <!-- 热门景点页 -->
   <scroll-view wx:if="{{currentTab === 2}}" class="scroll-area" scroll-y>

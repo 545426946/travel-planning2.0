@@ -411,9 +411,9 @@ Page({
   // 探索目的地
   exploreDestinations() {
     console.log('探索目的地');
-    // 可以跳转到热门景点页面
-    this.setData({
-      currentTab: 2
+    // 跳转到独立的行程规划页面
+    wx.navigateTo({
+      url: '/pages/travel-plans/travel-plans'
     });
   },
 

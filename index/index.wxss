@@ -346,20 +346,7 @@ page {
   box-shadow: 0 2rpx 8rpx rgba(255, 107, 107, 0.4);
 }
 
-/* 行程规划页样式 */
-.planner-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 60rpx 40rpx 30rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-bottom-left-radius: 60rpx;
-  border-bottom-right-radius: 60rpx;
-}
 
-.page-title {
-  font-size: 48rpx;
-}
 
 /* 悬浮登录按钮（首页底部） */
 .floating-login-btn {
@@ -393,44 +380,9 @@ page {
   transition: all 0.3s ease;
 }
 
-.button-row {
-  display: flex;
-  gap: 20rpx;
-  justify-content: center;
-}
 
-.ai-plan-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  margin-right: 20rpx;
-  border-radius: 50rpx;
-  padding: 25rpx 40rpx;
-  font-size: 28rpx;
-  font-weight: 600;
-  box-shadow: 0 10rpx 25rpx rgba(255, 107, 107, 0.3);
-}
 
-.plan-list {
-  padding: 40rpx 30rpx;
-}
 
-.plan-item {
-  display: flex;
-  align-items: center;
-  background-color: #fff;
-  border-radius: 25rpx;
-  padding: 40rpx 30rpx;
-  margin-bottom: 30rpx;
-  box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.06);
-  transition: transform 0.3s ease;
-}
-
-.plan-date {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #667eea;
-  min-width: 160rpx;
-  margin-right: 30rpx;
-}
 
 .plan-details {
   flex: 1;
