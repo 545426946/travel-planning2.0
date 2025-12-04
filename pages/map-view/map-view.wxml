@@ -59,17 +59,28 @@
   <view class="route-info" wx:if="{{showRoute && markers.length > 0}}">
     <view class="route-header">
       <text class="route-title">行程路线</text>
-      <text class="route-count">{{markers.length}}个地点</text>
+      <text class="route-count">{{markers.length}}个景点</text>
     </view>
     
     <scroll-view class="route-list" scroll-y="true">
-      <view class="route-item" wx:for="{{markers}}" wx:key="id">
-        <view class="item-marker">{{item.callout.content}}</view>
-        <view class="item-details">
-          <text class="item-title">{{item.title}}</text>
-          <text class="item-coords">{{item.latitude.toFixed(4)}}, {{item.longitude.toFixed(4)}}</text>
+      <block wx:for="{{markersByDay}}" wx:key="dayIndex" wx:for-item="dayData">
+        <view class="route-group day-{{dayData.dayIndex + 1}}">
+          <view class="route-group-header">
+            <view class="day-indicator" style="background-color: {{dayData.color}}">{{dayData.dayIndex + 1}}</view>
+            <text class="day-title">第{{dayData.dayIndex + 1}}天</text>
+            <text class="route-count">{{dayData.markers.length}}个景点</text>
+          </view>
+          
+          <view class="route-item" wx:for="{{dayData.markers}}" wx:key="id" wx:for-item="marker">
+            <view class="item-marker" style="background-color: {{dayData.color}}">{{dayData.markers.indexOf(marker) + 1}}</view>
+            <view class="item-details">
+              <text class="item-title">{{marker.title}}</text>
+              <text class="item-time" wx:if="{{marker.time}}">{{marker.time}}</text>
+              <text class="item-coords">{{marker.latitude.toFixed(4)}}, {{marker.longitude.toFixed(4)}}</text>
+            </view>
+          </view>
         </view>
-      </view>
+      </block>
     </scroll-view>
   </view>
 

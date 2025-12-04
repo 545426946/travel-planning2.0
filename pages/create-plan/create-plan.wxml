@@ -12,7 +12,7 @@
       </view>
       <input 
         class="form-input {{errors.title ? 'error' : ''}}"
-        placeholder="给你的旅行起个名字"
+        placeholder="请输入行程标题"
         value="{{formData.title}}"
         data-field="title"
         bindinput="onInputChange"
@@ -28,7 +28,7 @@
       </view>
       <input 
         class="form-input {{errors.destination ? 'error' : ''}}"
-        placeholder="例如：北京、云南大理"
+        placeholder="请输入目的地"
         value="{{formData.destination}}"
         data-field="destination"
         bindinput="onInputChange"
@@ -107,7 +107,7 @@
       <input 
         class="form-input {{errors.budget ? 'error' : ''}}"
         type="digit"
-        placeholder="预计总预算"
+        placeholder="请输入预算"
         value="{{formData.budget}}"
         data-field="budget"
         bindinput="onInputChange"
@@ -162,7 +162,7 @@
       </view>
       <textarea 
         class="form-textarea"
-        placeholder="简单描述一下这次旅行的计划..."
+        placeholder="请输入行程描述"
         value="{{formData.description}}"
         data-field="description"
         bindinput="onInputChange"
@@ -178,7 +178,7 @@
       </view>
       <input 
         class="form-input"
-        placeholder="例如：高铁、飞机、自驾"
+        placeholder="请输入交通方式"
         value="{{formData.transportation}}"
         data-field="transportation"
         bindinput="onInputChange"
@@ -193,7 +193,7 @@
       </view>
       <input 
         class="form-input"
-        placeholder="例如：酒店、民宿"
+        placeholder="请输入住宿安排"
         value="{{formData.accommodation}}"
         data-field="accommodation"
         bindinput="onInputChange"
@@ -208,7 +208,7 @@
       </view>
       <textarea 
         class="form-textarea"
-        placeholder="有什么特殊需求或注意事项吗？"
+        placeholder="请输入特殊要求"
         value="{{formData.specialRequirements}}"
         data-field="specialRequirements"
         bindinput="onInputChange"

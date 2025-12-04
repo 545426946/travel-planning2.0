@@ -24,7 +24,7 @@
           <input 
             class="form-input" 
             type="text" 
-            placeholder="请输入用户名（3-20位）"
+            placeholder="请输入用户名"
             value="{{formData.username}}"
             bindinput="onInput"
             data-field="username"
@@ -43,7 +43,7 @@
           <input 
             class="form-input" 
             type="{{showPassword ? 'text' : 'password'}}" 
-            placeholder="请输入密码（至少6位）"
+            placeholder="请输入密码"
             value="{{formData.password}}"
             bindinput="onInput"
             data-field="password"

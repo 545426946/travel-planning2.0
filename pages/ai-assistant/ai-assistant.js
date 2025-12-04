@@ -133,7 +133,7 @@ Page({
       title: 'AI 智能规划',
       content: '请描述您的旅行需求，我会为您制定详细行程',
       editable: true,
-      placeholderText: '例如：我想去云南大理丽江玩5天，预算3000元，喜欢自然风光和古镇文化',
+      placeholderText: '请输入旅行需求',
       success: async (res) => {
         if (res.confirm && res.content.trim()) {
           wx.showLoading({ title: 'AI 正在规划...' })

@@ -491,9 +491,9 @@ Page({
     
     wx.showModal({
       title: 'AI 旅行助手',
-      content: '请输入您的旅行问题，我会为您详细解答',
+      content: '',
       editable: true,
-      placeholderText: '例如：云南最佳旅游时间是什么时候？',
+      placeholderText: '请输入问题',
       success: async (res) => {
         if (res.confirm && res.content.trim()) {
           wx.showLoading({ title: 'AI 正在思考...' });

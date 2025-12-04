@@ -350,13 +350,14 @@ class TencentMapManager {
   }
 
   /**
-   * 备用地理编码方案：使用预定义的城市坐标
+   * 备用地理编码方案：使用预定义的景点和城市坐标
    * @param {string} address 地址
    * @returns {Object} 位置信息
    */
   static getFallbackLocation(address) {
     console.log('使用备用地理编码方案:', address)
     
+    // 详细的城市坐标
     const cityCoordinates = {
       '北京': { lat: 39.90923, lng: 116.397428 },
       '上海市': { lat: 31.230416, lng: 121.473701 },
@@ -376,10 +377,103 @@ class TencentMapManager {
       '南京市': { lat: 32.060255, lng: 118.796877 },
       '南京': { lat: 32.060255, lng: 118.796877 },
       '重庆市': { lat: 29.563009, lng: 106.551556 },
-      '重庆': { lat: 29.563009, lng: 106.551556 }
+      '重庆': { lat: 29.563009, lng: 106.551556 },
+      '天津市': { lat: 39.084158, lng: 117.200983 },
+      '天津': { lat: 39.084158, lng: 117.200983 },
+      '苏州市': { lat: 31.298977, lng: 120.585316 },
+      '苏州': { lat: 31.298977, lng: 120.585316 },
+      '青岛市': { lat: 36.067108, lng: 120.382637 },
+      '青岛': { lat: 36.067108, lng: 120.382637 },
+      '厦门市': { lat: 24.479833, lng: 118.089425 },
+      '厦门': { lat: 24.479833, lng: 118.089425 },
+      '武汉市': { lat: 30.592849, lng: 114.305544 },
+      '武汉': { lat: 30.592849, lng: 114.305544 },
+      '大连市': { lat: 38.914003, lng: 121.614682 },
+      '大连': { lat: 38.914003, lng: 121.614682 }
     }
 
-    // 尝试精确匹配
+    // 具体景点坐标（更精确）
+    const attractionCoordinates = {
+      // 北京景点
+      '故宫博物院': { lat: 39.916345, lng: 116.397155 },
+      '故宫': { lat: 39.916345, lng: 116.397155 },
+      '天安门广场': { lat: 39.904020, lng: 116.397446 },
+      '天安门': { lat: 39.904020, lng: 116.397446 },
+      '八达岭长城': { lat: 40.359852, lng: 116.020007 },
+      '慕田峪长城': { lat: 40.431036, lng: 116.578982 },
+      '颐和园': { lat: 39.999862, lng: 116.275475 },
+      '天坛': { lat: 39.882222, lng: 116.406617 },
+      '北海公园': { lat: 39.925777, lng: 116.383122 },
+      '景山公园': { lat: 39.925426, lng: 116.396929 },
+      '什刹海': { lat: 39.940722, lng: 116.387672 },
+      '鸟巢': { lat: 39.992877, lng: 116.396447 },
+      '水立方': { lat: 39.993434, lng: 116.389886 },
+      '南锣鼓巷': { lat: 39.936834, lng: 116.403756 },
+      '王府井': { lat: 39.913889, lng: 116.414749 },
+      '雍和宫': { lat: 39.947587, lng: 116.416781 },
+      
+      // 上海景点
+      '外滩': { lat: 31.239190, lng: 121.490677 },
+      '东方明珠': { lat: 31.239193, lng: 121.499779 },
+      '豫园': { lat: 31.226966, lng: 121.492176 },
+      '南京路步行街': { lat: 31.234541, lng: 121.474937 },
+      '城隍庙': { lat: 31.226949, lng: 121.492058 },
+      '新天地': { lat: 31.219872, lng: 121.474662 },
+      '田子坊': { lat: 31.211286, lng: 121.469872 },
+      
+      // 杭州景点
+      '西湖': { lat: 30.242087, lng: 120.146525 },
+      '灵隐寺': { lat: 30.240389, lng: 120.099739 },
+      '雷峰塔': { lat: 30.231209, lng: 120.149763 },
+      '断桥': { lat: 30.254778, lng: 120.149426 },
+      '苏堤': { lat: 30.242567, lng: 120.139880 },
+      '三潭印月': { lat: 30.236476, lng: 120.148999 },
+      '宋城': { lat: 30.168156, lng: 120.095311 },
+      '河坊街': { lat: 30.245957, lng: 120.166312 },
+      '西溪湿地': { lat: 30.268727, lng: 120.062115 },
+      
+      // 三亚景点
+      '天涯海角': { lat: 18.309985, lng: 109.357719 },
+      '亚龙湾': { lat: 18.198498, lng: 109.668938 },
+      '大东海': { lat: 18.221552, lng: 109.514564 },
+      '南山文化旅游区': { lat: 18.317756, lng: 109.167101 },
+      '蜈支洲岛': { lat: 18.313224, lng: 109.765777 },
+      
+      // 西安景点
+      '兵马俑': { lat: 34.384651, lng: 109.273435 },
+      '大雁塔': { lat: 34.218653, lng: 108.964657 },
+      '古城墙': { lat: 34.265831, lng: 108.954097 },
+      '回民街': { lat: 34.262956, lng: 108.940682 },
+      '钟楼': { lat: 34.263043, lng: 108.942345 },
+      '鼓楼': { lat: 34.264976, lng: 108.940312 },
+      '华清池': { lat: 34.363036, lng: 109.213255 },
+      '大唐芙蓉园': { lat: 34.210269, lng: 109.005844 },
+      
+      // 成都景点
+      '宽窄巷子': { lat: 30.669368, lng: 104.059869 },
+      '锦里': { lat: 30.646640, lng: 104.045234 },
+      '武侯祠': { lat: 30.644915, lng: 104.046796 },
+      '杜甫草堂': { lat: 30.658759, lng: 104.027938 },
+      '青羊宫': { lat: 30.645835, lng: 104.045532 },
+      '都江堰': { lat: 31.001485, lng: 103.607258 },
+      '熊猫基地': { lat: 30.732697, lng: 104.143287 },
+      '春熙路': { lat: 30.659941, lng: 104.081759 },
+      '文殊院': { lat: 30.666979, lng: 104.066936 }
+    }
+
+    // 首先尝试精确匹配具体景点
+    for (const [attraction, coords] of Object.entries(attractionCoordinates)) {
+      if (address.includes(attraction) || address === attraction) {
+        console.log('匹配到具体景点:', attraction, coords)
+        return {
+          success: true,
+          location: coords,
+          address: attraction
+        }
+      }
+    }
+
+    // 然后尝试城市匹配
     for (const [city, coords] of Object.entries(cityCoordinates)) {
       if (address.includes(city)) {
         console.log('匹配到城市:', city, coords)
@@ -391,12 +485,62 @@ class TencentMapManager {
       }
     }
 
-    // 如果没有匹配到，返回北京默认坐标
-    console.log('未匹配到城市，使用默认坐标')
+    // 如果地址包含具体门牌号信息，尝试解析
+    const addressNumberMatch = address.match(/(\d+号|\d+号楼|\d+栋)/)
+    if (addressNumberMatch) {
+      console.log('检测到门牌号:', addressNumberMatch[1])
+      // 对于有门牌号的地址，优先使用城市坐标作为基准
+      for (const [city, coords] of Object.entries(cityCoordinates)) {
+        if (address.includes(city)) {
+          return {
+            success: true,
+            location: coords,
+            address: address
+          }
+        }
+      }
+    }
+
+    // 最后尝试根据景点特征推断城市
+    if (address.includes('宫') || address.includes('殿') || address.includes('寺') || address.includes('塔') || 
+        address.includes('园') || address.includes('湖') || address.includes('山') || address.includes('海') || 
+        address.includes('城') || address.includes('街') || address.includes('巷')) {
+      
+      // 根据景点类型推断可能的城市
+      const featureToCity = {
+        '故宫': '北京',
+        '长城': '北京', 
+        '外滩': '上海',
+        '东方明珠': '上海',
+        '西湖': '杭州',
+        '灵隐寺': '杭州',
+        '天涯海角': '三亚',
+        '兵马俑': '西安',
+        '宽窄巷子': '成都',
+        '锦里': '成都'
+      }
+      
+      for (const [feature, city] of Object.entries(featureToCity)) {
+        if (address.includes(feature)) {
+          const coords = cityCoordinates[city]
+          if (coords) {
+            console.log('根据特征推断城市:', city, coords)
+            return {
+              success: true,
+              location: coords,
+              address: city + ' ' + address
+            }
+          }
+        }
+      }
+    }
+
+    // 如果都没有匹配到，返回北京默认坐标
+    console.log('未匹配到任何坐标，使用北京默认坐标')
     return {
       success: true,
       location: cityCoordinates['北京'],
-      address: address
+      address: address || '北京'
     }
   }
 

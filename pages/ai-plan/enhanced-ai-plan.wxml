@@ -9,7 +9,7 @@
   <view class="form-section">
     <view class="form-group">
       <text class="label">📍 目的地</text>
-      <input class="input" placeholder="请输入旅行目的地" 
+      <input class="input" placeholder="请输入目的地" 
              data-field="destination" 
              value="{{formData.destination}}" 
              bindinput="onDestinationInput" />
@@ -62,7 +62,7 @@
 
     <view class="form-group">
       <text class="label">📝 特殊要求</text>
-      <textarea class="textarea" placeholder="请输入特殊需求或偏好" 
+      <textarea class="textarea" placeholder="请输入特殊要求或偏好" 
                 data-field="specialRequirements" 
                 value="{{formData.specialRequirements}}" 
                 bindinput="onSpecialRequirementsInput" />

@@ -56,6 +56,17 @@ class AIIntegration {
     }
   }
 
+  async askTravelQuestion(userId, question, context = {}) {
+    try {
+      const aiResponse = await aiService.travelQA(question, { userId, ...context })
+      const answer = typeof aiResponse === 'string' ? aiResponse : (aiResponse && aiResponse.content ? aiResponse.content : String(aiResponse))
+      return { success: true, answer }
+    } catch (error) {
+      console.error('AI问答失败:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
   // 仅保存行程（不重新生成）
   async savePlanOnly(userId, planData) {
     try {

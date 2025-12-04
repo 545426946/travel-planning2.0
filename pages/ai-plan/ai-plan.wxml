@@ -16,7 +16,7 @@
       </view>
       <input 
         class="form-input" 
-        placeholder="例如：北京、上海、杭州" 
+        placeholder="请输入目的地" 
         value="{{formData.destination}}"
         bindinput="onDestinationInput"
       />
@@ -115,7 +115,7 @@
       <view class="form-label">特殊要求</view>
       <textarea 
         class="form-textarea" 
-        placeholder="例如：带老人出游、饮食禁忌、特殊需求等"
+        placeholder="请输入特殊要求" 
         value="{{formData.specialRequirements}}"
         bindinput="onSpecialRequirementsInput"
         maxlength="200"
