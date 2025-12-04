@@ -32,13 +32,38 @@ class TencentMapManager {
   static async geocode(address, region = '') {
     console.log('地理编码请求:', address, region)
     
-    // 直接使用备用方案，避免API权限问题
     return new Promise((resolve) => {
-      setTimeout(() => {
-        const result = this.getFallbackLocation(address)
-        console.log('地理编码结果:', result)
-        resolve(result)
-      }, 100) // 模拟网络延迟
+      try {
+        const url = `${this.MAP_CONFIG.baseUrl}/ws/geocoder/v1/`
+        const data = {
+          address: address,
+          key: this.MAP_CONFIG.key
+        }
+        if (region && typeof region === 'string' && region.trim().length > 0) {
+          data.region = region
+        }
+        wx.request({
+          url,
+          method: 'GET',
+          data,
+          success: (res) => {
+            if (res.statusCode === 200 && res.data && res.data.status === 0 && res.data.result) {
+              const loc = res.data.result.location
+              resolve({ success: true, location: { lat: loc.lat, lng: loc.lng }, address })
+              return
+            }
+            const fallback = this.getFallbackLocation(address)
+            resolve(fallback)
+          },
+          fail: () => {
+            const fallback = this.getFallbackLocation(address)
+            resolve(fallback)
+          }
+        })
+      } catch (e) {
+        const fallback = this.getFallbackLocation(address)
+        resolve(fallback)
+      }
     })
   }
 

@@ -774,6 +774,60 @@ Page({
     return '全天'
   },
 
+  async resolveGeo(item, plan) {
+    const region = plan.destination || ''
+    const tryList = [
+      { addr: item.title, region },
+      { addr: `${region} ${item.title}`, region },
+      { addr: item.address, region }
+    ]
+
+    let best = null
+    for (let i = 0; i < tryList.length; i++) {
+      try {
+        const r = await TencentMapManager.geocode(tryList[i].addr, tryList[i].region)
+        const lat = Number(r?.location?.lat)
+        const lng = Number(r?.location?.lng)
+        if (r && r.success && Number.isFinite(lat) && Number.isFinite(lng)) {
+          best = r
+          break
+        }
+      } catch (e) {}
+    }
+
+    try {
+      const center = TencentMapManager.getFallbackLocation(region || item.address || item.title)
+      const cLat = Number(center?.location?.lat)
+      const cLng = Number(center?.location?.lng)
+      const isNearCenter = (res) => {
+        try {
+          const lat = Number(res?.location?.lat)
+          const lng = Number(res?.location?.lng)
+          if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(cLat) || !Number.isFinite(cLng)) return false
+          const d = TencentMapManager.calculateDistance(lat, lng, cLat, cLng)
+          return d < 200
+        } catch { return false }
+      }
+
+      if (!best || isNearCenter(best)) {
+        try {
+          const poi = await TencentMapManager.searchNearby(cLat, cLng, item.title, 5000)
+          if (poi && poi.success && Array.isArray(poi.pois) && poi.pois.length > 0) {
+            const p = poi.pois[0]
+            if (p?.location) {
+              return { success: true, location: { lat: p.location.lat, lng: p.location.lng }, address: p.address || item.title }
+            }
+          }
+        } catch (e) {}
+      }
+    } catch (e) {}
+
+    if (best) return best
+
+    const fb = TencentMapManager.getFallbackLocation(`${region} ${item.title}`)
+    return fb
+  },
+
   /**
    * 显示旅行路线
    */
@@ -811,7 +865,7 @@ Page({
         try {
           // 地理编码获取景点坐标
           console.log(`正在地理编码景点: ${item.title} - ${item.address}`)
-          const geoResult = await TencentMapManager.geocode(item.address)
+          const geoResult = await this.resolveGeo(item, plan)
           
           if (geoResult.success) {
             const marker = {
