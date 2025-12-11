@@ -150,100 +150,122 @@ class AIService {
     const startDate = today.toISOString().split('T')[0]
     const endDate = new Date(today.getTime() + (totalDays - 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     
-    // 根据目的地生成特色内容（使用官方景点全称）
+    // 根据目的地生成特色内容（使用可定位的官方景点全称）
     const getDestinationFeatures = (dest) => {
+      // 首先尝试从数据库获取可定位景点
+      const dbAttractions = getAttractionsByCity(dest)
+      
       if (dest.includes('北京')) {
         return {
-          attractions: ['故宫博物院', '天安门广场', '八达岭长城', '颐和园', '天坛公园', '圆明园'],
+          attractions: dbAttractions.length > 0 ? dbAttractions.slice(0, 6) : ['故宫博物院', '天安门广场', '八达岭长城', '颐和园', '天坛公园', '圆明园'],
           food: ['北京烤鸭', '炸酱面', '豆汁儿', '护国寺小吃'],
           tips: '北京历史悠久，景点众多，建议合理安排时间，注意天气变化'
         }
       } else if (dest.includes('上海')) {
         return {
-          attractions: ['外滩', '东方明珠塔', '豫园', '南京路步行街', '田子坊', '城隍庙'],
+          attractions: dbAttractions.length > 0 ? dbAttractions.slice(0, 6) : ['外滩', '东方明珠塔', '豫园', '南京路步行街', '田子坊', '城隍庙'],
           food: ['小笼包', '生煎包', '上海本帮菜', '糖醋排骨'],
           tips: '上海现代化程度高，交通便利，注意节假日期间人流拥挤'
         }
       } else if (dest.includes('杭州')) {
         return {
-          attractions: ['西湖风景名胜区', '灵隐寺', '雷峰塔', '宋城', '西溪湿地', '断桥'],
+          attractions: dbAttractions.length > 0 ? dbAttractions.slice(0, 6) : ['西湖', '灵隐寺', '雷峰塔', '宋城', '西溪湿地', '断桥'],
           food: ['西湖醋鱼', '东坡肉', '龙井虾仁', '叫花鸡'],
           tips: '杭州风景优美，春季最佳，注意景区内交通安排'
         }
       } else if (dest.includes('西安')) {
         return {
-          attractions: ['秦始皇兵马俑博物馆', '华清宫', '大雁塔', '西安城墙', '钟楼', '回民街'],
+          attractions: dbAttractions.length > 0 ? dbAttractions.slice(0, 6) : ['秦始皇兵马俑博物馆', '华清宫', '大雁塔', '西安城墙', '钟楼', '回民街'],
           food: ['肉夹馍', '羊肉泡馍', '凉皮', 'biangbiang面'],
           tips: '西安历史文化深厚，夏季炎热，建议早出晚归避开高温'
         }
       } else if (dest.includes('成都')) {
         return {
-          attractions: ['成都大熊猫繁育研究基地', '宽窄巷子', '锦里古街', '武侯祠', '杜甫草堂', '春熙路'],
+          attractions: dbAttractions.length > 0 ? dbAttractions.slice(0, 6) : ['成都大熊猫繁育研究基地', '宽窄巷子', '锦里古街', '武侯祠', '杜甫草堂', '春熙路'],
           food: ['火锅', '担担面', '龙抄手', '夫妻肺片'],
           tips: '成都美食众多，注意饮食适度，天气多变建议带伞'
         }
       } else if (dest.includes('重庆')) {
         return {
-          attractions: ['洪崖洞', '解放碑', '磁器口古镇', '长江索道', '南山一棵树', '朝天门'],
+          attractions: dbAttractions.length > 0 ? dbAttractions.slice(0, 6) : ['洪崖洞', '解放碑', '磁器口古镇', '长江索道', '南山一棵树', '朝天门'],
           food: ['重庆火锅', '小面', '酸辣粉', '毛血旺'],
           tips: '重庆地形复杂，建议穿舒适的鞋子，夏季炎热注意防暑'
         }
       } else if (dest.includes('广州')) {
         return {
-          attractions: ['广州塔', '陈家祠', '沙面', '白云山', '北京路', '上下九步行街'],
+          attractions: dbAttractions.length > 0 ? dbAttractions.slice(0, 6) : ['广州塔', '陈家祠', '沙面', '白云山', '北京路', '上下九步行街'],
           food: ['早茶点心', '白切鸡', '烧鹅', '肠粉'],
           tips: '广州气候湿热，注意防暑降温，早茶文化值得体验'
         }
       } else if (dest.includes('深圳')) {
         return {
-          attractions: ['世界之窗', '深圳欢乐谷', '大梅沙', '莲花山公园', '深圳湾公园', '东部华侨城'],
+          attractions: dbAttractions.length > 0 ? dbAttractions.slice(0, 6) : ['世界之窗', '深圳欢乐谷', '大梅沙', '莲花山公园', '深圳湾公园', '东部华侨城'],
           food: ['潮汕牛肉火锅', '肠粉', '烧腊', '海鲜'],
           tips: '深圳现代化程度高，交通便利，注意防晒'
         }
       } else if (dest.includes('南京')) {
         return {
-          attractions: ['中山陵', '夫子庙', '秦淮河', '玄武湖', '明孝陵', '总统府'],
+          attractions: dbAttractions.length > 0 ? dbAttractions.slice(0, 6) : ['中山陵', '夫子庙', '秦淮河', '玄武湖', '明孝陵', '总统府'],
           food: ['盐水鸭', '鸭血粉丝汤', '小笼包', '牛肉锅贴'],
           tips: '南京历史文化丰富，夏季炎热，建议避开高温时段'
         }
       } else if (dest.includes('苏州')) {
         return {
-          attractions: ['拙政园', '虎丘', '寒山寺', '狮子林', '留园', '平江路'],
+          attractions: dbAttractions.length > 0 ? dbAttractions.slice(0, 6) : ['拙政园', '虎丘', '寒山寺', '狮子林', '留园', '平江路'],
           food: ['松鼠桂鱼', '响油鳝糊', '蟹黄汤包', '苏式糕点'],
           tips: '苏州园林众多，建议提前购票，春秋季节最佳'
         }
       } else if (dest.includes('厦门')) {
         return {
-          attractions: ['鼓浪屿', '南普陀寺', '厦门大学', '曾厝垵', '环岛路', '中山路步行街'],
+          attractions: dbAttractions.length > 0 ? dbAttractions.slice(0, 6) : ['鼓浪屿', '南普陀寺', '厦门大学', '曾厝垵', '环岛路', '中山路步行街'],
           food: ['沙茶面', '海蛎煎', '土笋冻', '花生汤'],
           tips: '厦门气候宜人，鼓浪屿需提前预约船票'
         }
       } else if (dest.includes('三亚')) {
         return {
-          attractions: ['天涯海角', '亚龙湾', '蜈支洲岛', '南山文化旅游区', '大东海', '三亚湾'],
+          attractions: dbAttractions.length > 0 ? dbAttractions.slice(0, 6) : ['天涯海角', '亚龙湾', '蜈支洲岛', '南山文化旅游区', '大东海', '三亚湾'],
           food: ['海鲜大餐', '椰子鸡', '清补凉', '抱罗粉'],
           tips: '三亚阳光强烈，注意防晒，海上活动注意安全'
         }
       } else if (dest.includes('桂林')) {
         return {
-          attractions: ['漓江', '阳朔西街', '象鼻山', '龙脊梯田', '两江四湖', '七星公园'],
+          attractions: dbAttractions.length > 0 ? dbAttractions.slice(0, 6) : ['漓江', '阳朔西街', '象鼻山', '龙脊梯田', '两江四湖', '七星公园'],
           food: ['桂林米粉', '啤酒鱼', '荔浦芋头', '油茶'],
           tips: '桂林山水甲天下，漓江游船建议提前预订'
         }
       } else if (dest.includes('丽江')) {
         return {
-          attractions: ['丽江古城', '玉龙雪山', '束河古镇', '泸沽湖', '黑龙潭公园', '拉市海'],
+          attractions: dbAttractions.length > 0 ? dbAttractions.slice(0, 6) : ['丽江古城', '玉龙雪山', '束河古镇', '泸沽湖'],
           food: ['纳西烤鱼', '鸡豆凉粉', '丽江粑粑', '腊排骨火锅'],
           tips: '丽江海拔较高，注意高原反应，紫外线强注意防晒'
         }
       } else if (dest.includes('大理')) {
         return {
-          attractions: ['大理古城', '洱海', '崇圣寺三塔', '苍山', '双廊古镇', '喜洲古镇'],
+          attractions: dbAttractions.length > 0 ? dbAttractions.slice(0, 6) : ['大理古城', '洱海', '崇圣寺三塔', '苍山'],
           food: ['白族三道茶', '乳扇', '饵丝', '砂锅鱼'],
           tips: '大理风景优美，环洱海骑行是热门项目'
         }
+      } else if (dest.includes('武汉')) {
+        return {
+          attractions: dbAttractions.length > 0 ? dbAttractions.slice(0, 6) : ['黄鹤楼', '东湖风景区', '户部巷', '汉口江滩', '武汉大学', '楚河汉街'],
+          food: ['热干面', '豆皮', '武昌鱼', '鸭脖'],
+          tips: '武汉夏季炎热，建议避开高温时段，樱花季节武大很美'
+        }
+      } else if (dest.includes('青岛')) {
+        return {
+          attractions: dbAttractions.length > 0 ? dbAttractions.slice(0, 6) : ['栈桥', '八大关', '崂山', '五四广场', '青岛啤酒博物馆', '金沙滩'],
+          food: ['海鲜', '青岛啤酒', '辣炒蛤蜊', '鲅鱼饺子'],
+          tips: '青岛海滨城市，夏季凉爽，适合避暑'
+        }
+      } else if (dbAttractions.length > 0) {
+        // 如果数据库中有该城市的景点，使用数据库中的景点
+        return {
+          attractions: dbAttractions.slice(0, 6),
+          food: ['当地特色菜', '地方小吃', '传统美食', '特色糕点'],
+          tips: `${dest}历史文化深厚，建议提前了解当地风俗，合理安排行程`
+        }
       } else {
-        // 默认内容
+        // 默认内容 - 使用通用景点名称
         return {
           attractions: [`${dest}博物馆`, `${dest}公园`, `${dest}古城`, `${dest}风景区`],
           food: ['当地特色菜', '地方小吃', '传统美食', '特色糕点'],
@@ -325,21 +347,33 @@ ${dayPlans}💰 费用明细：
   async generateTravelPlan(userInput, userPreferences = {}) {
     // 尝试获取天气信息（如果可能从用户输入中提取城市）
     let weatherInfo = null
+    let cityAttractions = []
+    let city = null
+    
     try {
-      const { weatherService } = require('./weather-service')
-      
       // 从用户输入中提取城市名称
-      const cityMatch = userInput.match(/(?:去|到|在|前往)([^，。！？\s]+)/)
-      const city = cityMatch ? cityMatch[1] : null
+      const cityMatch = userInput.match(/目的地[:：]\s*([^\n，。]+)/) || 
+                        userInput.match(/(?:去|到|在|前往)([^，。！？\s]+)/)
+      city = cityMatch ? cityMatch[1].trim() : null
       
       if (city) {
-        const weatherResult = await weatherService.getWeather(city)
-        if (weatherResult.success) {
-          weatherInfo = weatherResult.data
+        // 获取该城市的可定位景点
+        cityAttractions = getAttractionsByCity(city)
+        console.log(`城市 ${city} 的可定位景点:`, cityAttractions.slice(0, 5))
+        
+        // 尝试获取天气
+        try {
+          const { weatherService } = require('./weather-service')
+          const weatherResult = await weatherService.getWeather(city)
+          if (weatherResult.success) {
+            weatherInfo = weatherResult.data
+          }
+        } catch (e) {
+          console.log('获取天气信息失败:', e)
         }
       }
     } catch (error) {
-      console.log('获取天气信息失败，将使用通用建议:', error)
+      console.log('提取城市信息失败:', error)
     }
     const systemPrompt = `你是一个经验丰富的旅行规划AI助手，专门为用户制定详细、实用、个性化的旅行行程。
 
@@ -433,6 +467,12 @@ Day 2 - [日期]：
 - 费用明细必须真实合理，符合当地消费水平
 - 优先推荐上述参考列表中的知名景点
 - ${weatherInfo ? `已获取实时天气信息：${weatherInfo.current.weather}，${weatherInfo.current.temperature}，请据此提供针对性的建议` : '建议出行前关注当地天气预报'}
+${cityAttractions.length > 0 ? `
+## ⚠️ 重要：该目的地可定位景点列表（必须从以下列表中选择景点）：
+${cityAttractions.join('、')}
+
+请严格从上述列表中选择景点进行规划，这些景点都已在地图数据库中注册，可以准确定位和标注。
+不要使用列表之外的景点名称！` : ''}
 
 用户偏好：${JSON.stringify(userPreferences)}
 ${weatherInfo ? `
@@ -673,7 +713,53 @@ ${weatherInfo ? `
   }
 }
 
+// 获取可定位的景点列表（用于AI提示）
+function getLocatableAttractions() {
+  try {
+    const attractionsDB = require('../config/attractions-database')
+    return Object.keys(attractionsDB)
+  } catch (e) {
+    return []
+  }
+}
+
+// 根据城市获取推荐景点
+function getAttractionsByCity(city) {
+  const cityAttractions = {
+    '北京': ['故宫博物院', '天安门广场', '八达岭长城', '颐和园', '天坛公园', '圆明园', '北海公园', '景山公园', '雍和宫', '南锣鼓巷', '王府井大街', '798艺术区', '鸟巢', '水立方', '前门大街', '恭王府', '中国国家博物馆', '香山公园'],
+    '上海': ['外滩', '东方明珠塔', '豫园', '南京路步行街', '田子坊', '城隍庙', '朱家角古镇', '上海迪士尼乐园', '陆家嘴', '新天地', '静安寺', '人民广场', '上海博物馆', '上海科技馆', '武康路'],
+    '杭州': ['西湖', '灵隐寺', '雷峰塔', '断桥', '苏堤', '三潭印月', '西溪湿地', '宋城', '河坊街', '千岛湖'],
+    '西安': ['秦始皇兵马俑博物馆', '华清宫', '大雁塔', '西安城墙', '钟楼', '鼓楼', '回民街', '大唐芙蓉园', '大唐不夜城', '陕西历史博物馆', '华山', '碑林博物馆'],
+    '成都': ['宽窄巷子', '锦里古街', '武侯祠', '杜甫草堂', '青城山', '都江堰', '成都大熊猫繁育研究基地', '春熙路', '太古里', '文殊院', '人民公园', '九眼桥'],
+    '重庆': ['洪崖洞', '解放碑', '磁器口古镇', '长江索道', '南山一棵树', '朝天门', '李子坝轻轨站', '大足石刻', '三峡博物馆', '鹅岭公园'],
+    '广州': ['广州塔', '陈家祠', '沙面', '白云山', '长隆欢乐世界', '北京路', '上下九步行街', '越秀公园', '珠江夜游'],
+    '深圳': ['世界之窗', '深圳欢乐谷', '大梅沙', '莲花山公园', '深圳湾公园', '东部华侨城', '华强北'],
+    '南京': ['中山陵', '夫子庙', '秦淮河', '玄武湖', '明孝陵', '总统府', '南京博物院', '鸡鸣寺', '老门东', '南京长江大桥'],
+    '苏州': ['拙政园', '虎丘', '寒山寺', '狮子林', '留园', '平江路', '山塘街', '周庄古镇', '同里古镇', '金鸡湖'],
+    '厦门': ['鼓浪屿', '南普陀寺', '厦门大学', '曾厝垵', '环岛路', '中山路步行街', '胡里山炮台', '集美学村'],
+    '三亚': ['天涯海角', '亚龙湾', '蜈支洲岛', '南山文化旅游区', '大东海', '三亚湾', '鹿回头', '呀诺达'],
+    '桂林': ['漓江', '阳朔西街', '象鼻山', '龙脊梯田', '两江四湖', '七星公园', '芦笛岩', '遇龙河'],
+    '丽江': ['丽江古城', '玉龙雪山', '束河古镇', '泸沽湖'],
+    '大理': ['大理古城', '洱海', '崇圣寺三塔', '苍山', '双廊古镇', '喜洲古镇'],
+    '武汉': ['黄鹤楼', '东湖风景区', '户部巷', '汉口江滩', '武汉大学', '楚河汉街', '湖北省博物馆', '归元寺', '武汉长江大桥'],
+    '青岛': ['栈桥', '八大关', '崂山', '五四广场', '青岛啤酒博物馆', '金沙滩', '小青岛', '信号山'],
+    '哈尔滨': ['哈尔滨冰雪大世界', '中央大街', '圣索菲亚大教堂'],
+    '昆明': ['石林', '滇池', '翠湖', '西山'],
+    '拉萨': ['布达拉宫', '大昭寺', '纳木错'],
+    '敦煌': ['莫高窟', '鸣沙山', '月牙泉']
+  }
+  
+  // 查找匹配的城市
+  for (const [cityName, attractions] of Object.entries(cityAttractions)) {
+    if (city.includes(cityName) || cityName.includes(city)) {
+      return attractions
+    }
+  }
+  
+  return []
+}
+
 // 创建 AI 服务实例
 const aiService = new AIService()
 
-module.exports = { aiService, AIService }
+module.exports = { aiService, AIService, getLocatableAttractions, getAttractionsByCity }
