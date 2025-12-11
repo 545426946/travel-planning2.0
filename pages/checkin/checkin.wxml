@@ -1,0 +1,156 @@
+<!-- 打卡页面 -->
+<view class="container">
+  <!-- 顶部栏 -->
+  <view class="header">
+    <view class="back-btn" bindtap="goBack">
+      <text class="back-icon">←</text>
+    </view>
+    <text class="header-title">打卡</text>
+    <view class="header-right"></view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-state">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">正在获取位置...</text>
+  </view>
+
+  <!-- 主内容 -->
+  <scroll-view wx:else class="content" scroll-y>
+    <!-- 位置卡片 -->
+    <view class="location-card">
+      <view class="location-header">
+        <text class="location-icon">📍</text>
+        <text class="location-title">当前位置</text>
+        <view class="relocate-btn" bindtap="relocate">
+          <text class="relocate-icon">🔄</text>
+          <text>重新定位</text>
+        </view>
+      </view>
+      
+      <view class="location-info">
+        <text class="location-address">{{address || '正在获取地址...'}}</text>
+        <text class="location-coords">{{latitude ? latitude.toFixed(6) + ', ' + longitude.toFixed(6) : ''}}</text>
+      </view>
+
+      <!-- 地图预览 -->
+      <map
+        class="location-map"
+        latitude="{{latitude}}"
+        longitude="{{longitude}}"
+        scale="16"
+        show-location="{{true}}"
+        markers="{{latitude ? [{latitude: latitude, longitude: longitude, iconPath: '/images/marker.png', width: 28, height: 36}] : []}}">
+      </map>
+    </view>
+
+    <!-- 打卡地点 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">打卡地点</text>
+        <view wx:if="{{nearbyPois.length > 0}}" class="nearby-btn" bindtap="showPoiPicker">
+          <text>附近景点</text>
+          <text class="nearby-count">{{nearbyPois.length}}</text>
+        </view>
+      </view>
+
+      <!-- 已选择的景点 -->
+      <view wx:if="{{selectedPoi}}" class="selected-poi">
+        <view class="poi-info">
+          <text class="poi-name">{{selectedPoi.name}}</text>
+          <text class="poi-distance">{{selectedPoi.distance}}m</text>
+        </view>
+        <view class="clear-btn" bindtap="clearSelectedPoi">×</view>
+      </view>
+
+      <!-- 输入框 -->
+      <view wx:else class="input-box">
+        <input 
+          class="name-input" 
+          placeholder="输入地点名称，如：故宫博物院"
+          value="{{name}}"
+          bindinput="onNameInput"
+          maxlength="50" />
+      </view>
+    </view>
+
+    <!-- 照片 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">照片</text>
+        <text class="section-sub">{{photos.length}}/9</text>
+      </view>
+
+      <view class="photo-grid">
+        <!-- 已选照片 -->
+        <view wx:for="{{photos}}" wx:key="index" class="photo-item">
+          <image class="photo-img" src="{{item}}" mode="aspectFill" bindtap="previewPhoto" data-url="{{item}}" />
+          <view class="photo-delete" catchtap="removePhoto" data-index="{{index}}">×</view>
+        </view>
+
+        <!-- 添加按钮 -->
+        <view wx:if="{{photos.length < 9}}" class="photo-add" bindtap="choosePhoto">
+          <text class="add-icon">📷</text>
+          <text class="add-text">添加照片</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 备注 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">备注</text>
+      </view>
+
+      <textarea 
+        class="note-input"
+        placeholder="记录这一刻的心情..."
+        value="{{note}}"
+        bindinput="onNoteInput"
+        maxlength="500"
+        auto-height />
+    </view>
+
+    <!-- 占位 -->
+    <view class="bottom-space"></view>
+  </scroll-view>
+
+  <!-- 提交按钮 -->
+  <view class="submit-bar">
+    <button 
+      class="submit-btn {{submitting ? 'disabled' : ''}}" 
+      bindtap="submit"
+      disabled="{{submitting}}">
+      <text wx:if="{{submitting}}">提交中...</text>
+      <text wx:else>🎯 打卡</text>
+    </button>
+  </view>
+
+  <!-- 附近景点选择器 -->
+  <view wx:if="{{showPoiPicker}}" class="poi-picker">
+    <view class="picker-mask" bindtap="hidePoiPicker"></view>
+    <view class="picker-content">
+      <view class="picker-header">
+        <text class="picker-title">附近景点</text>
+        <view class="picker-close" bindtap="hidePoiPicker">×</view>
+      </view>
+      <scroll-view class="picker-list" scroll-y>
+        <view 
+          wx:for="{{nearbyPois}}" 
+          wx:key="id" 
+          class="poi-item"
+          bindtap="selectPoi"
+          data-index="{{index}}">
+          <view class="poi-main">
+            <text class="poi-name">{{item.name}}</text>
+            <text class="poi-type">{{item.type}}</text>
+          </view>
+          <view class="poi-sub">
+            <text class="poi-address">{{item.address}}</text>
+            <text class="poi-distance">{{item.distance}}m</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+</view>

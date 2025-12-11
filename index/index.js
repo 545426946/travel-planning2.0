@@ -15,6 +15,12 @@ Page({
       visitedPlaces: 0,
       favoriteRoutes: 0
     },
+    // 足迹统计
+    footprintStats: {
+      provinces: 0,
+      cities: 0,
+      attractions: 0
+    },
     // AI推荐数据
     aiRecommendations: [],
     // Tabs 数据
@@ -152,12 +158,14 @@ Page({
     if (userInfo) {
       this.loadUserStats()
       this.loadUserTravelPlans()
+      this.loadFootprintStats()
     } else {
       // 未登录则清空用户相关数据
       this.setData({
         myTravelPlans: [],
         travelPlans: [],
-        stats: { visitedPlaces: 0, favoriteRoutes: 0 }
+        stats: { visitedPlaces: 0, favoriteRoutes: 0 },
+        footprintStats: { provinces: 0, cities: 0, attractions: 0 }
       })
     }
   },
@@ -644,5 +652,38 @@ Page({
   onImageError(e) {
     console.log('图片加载失败:', e.detail);
     // 可以设置默认图片
+  },
+
+  // 加载足迹统计
+  async loadFootprintStats() {
+    const userId = Auth.getCurrentUserId()
+    if (!userId) return
+
+    try {
+      const { data, error } = await supabase
+        .from('travel_stats')
+        .select('total_provinces, total_cities, total_attractions')
+        .eq('user_id', userId)
+        .single()
+
+      if (!error && data) {
+        this.setData({
+          footprintStats: {
+            provinces: data.total_provinces || 0,
+            cities: data.total_cities || 0,
+            attractions: data.total_attractions || 0
+          }
+        })
+      }
+    } catch (e) {
+      console.log('加载足迹统计失败:', e)
+    }
+  },
+
+  // 跳转到足迹地图
+  goToFootprint() {
+    wx.navigateTo({
+      url: '/pages/map/map'
+    })
   }
 });

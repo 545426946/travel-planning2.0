@@ -3,10 +3,13 @@
     "index/index",
     "pages/login/login",
     "pages/register/register",
+    "pages/map/map",
+    "pages/checkin/checkin",
     "pages/ai-plan/ai-plan",
     "pages/ai-assistant/ai-assistant",
     "pages/travel-plans/travel-plans",
     "pages/plan-detail/plan-detail",
+    "pages/plan-map/plan-map",
     "pages/create-plan/create-plan"
   ],
   "window": {
@@ -26,5 +29,6 @@
     "scope.userInfo": {
       "desc": "您的微信头像、昵称等用户信息将用于完善会员资料，提供更好的个性化服务"
     }
-  }
+  },
+  "subpackages": []
 }

@@ -62,6 +62,7 @@
   "libVersion": "2.19.4",
   "appid": "wx31db19e0efdc4d9d",
   "projectname": "AI Travel",
+  "miniprogramRoot": "./",
   "isGameTourist": false,
   "condition": {
     "search": {

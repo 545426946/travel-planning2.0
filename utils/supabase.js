@@ -1,8 +1,9 @@
 // utils/supabase.js
 // 微信小程序环境下使用HTTP API调用Supabase
 
-const supabaseUrl = 'https://hmnjuntvubqvbpeyqoxw.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhtbmp1bnR2dWJxdmJwZXlxb3h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MjEwNDYsImV4cCI6MjA3ODk5NzA0Nn0.BCp0_8M3OhlIhLQ4fz54le-sWqZeUx9JDRXr1XRsX8g'
+const { SUPABASE_CONFIG } = require('./config')
+const supabaseUrl = SUPABASE_CONFIG.url
+const supabaseAnonKey = SUPABASE_CONFIG.anonKey
 
 // 创建查询构建器类
 class QueryBuilder {
@@ -174,6 +175,28 @@ class QueryBuilder {
 const supabase = {
   from: (table) => {
     return new QueryBuilder(table, supabaseUrl, supabaseAnonKey)
+  },
+  rpc: (fnName, params) => {
+    return new Promise((resolve) => {
+      const url = `${supabaseUrl}/rest/v1/rpc/${fnName}`
+      const headers = {
+        'apikey': supabaseAnonKey,
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'Content-Type': 'application/json'
+      }
+      wx.request({
+        url,
+        method: 'POST',
+        header: headers,
+        data: params || {},
+        success: (res) => {
+          resolve({ data: res.data, error: null })
+        },
+        fail: (err) => {
+          resolve({ data: null, error: err })
+        }
+      })
+    })
   }
 }
 

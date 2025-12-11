@@ -1,0 +1,299 @@
+<!-- 旅行计划地图页面 - 优化版本 -->
+<view class="container">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading">
+    <view class="loading-box">
+      <view class="spinner"></view>
+      <text class="loading-text">{{loadingText}}</text>
+      <text wx:if="{{loadingProgress}}" class="loading-progress">{{loadingProgress}}</text>
+    </view>
+  </view>
+
+  <!-- 地图区域 -->
+  <map
+    id="map"
+    class="map"
+    latitude="{{latitude}}"
+    longitude="{{longitude}}"
+    scale="{{scale}}"
+    markers="{{markers}}"
+    polyline="{{polyline}}"
+    show-location
+    enable-zoom
+    enable-scroll
+    bindmarkertap="onMarkerTap"
+    bindcallouttap="onMarkerTap">
+    
+    <!-- 顶部信息栏 -->
+    <cover-view class="top-bar">
+      <cover-view class="back-btn" bindtap="goBack">
+        <cover-view class="back-icon">←</cover-view>
+      </cover-view>
+      <cover-view class="title-box">
+        <cover-view class="title">{{plan.title || '行程地图'}}</cover-view>
+        <cover-view class="subtitle">
+          <cover-view class="subtitle-item">📍 {{city || plan.destination}}</cover-view>
+          <cover-view class="subtitle-item">🎯 {{attractions.length}}个景点</cover-view>
+          <cover-view class="subtitle-item">📏 {{totalDistance}}km</cover-view>
+        </cover-view>
+      </cover-view>
+    </cover-view>
+
+    <!-- 右侧工具栏 -->
+    <cover-view class="toolbar">
+      <cover-view class="tool-btn" bindtap="locateMe">
+        <cover-view class="tool-icon">📍</cover-view>
+      </cover-view>
+      <cover-view class="tool-btn" bindtap="showAllRoute">
+        <cover-view class="tool-icon">🗺️</cover-view>
+      </cover-view>
+      <cover-view class="tool-btn" bindtap="optimizeRoute">
+        <cover-view class="tool-icon">⚡</cover-view>
+      </cover-view>
+      <cover-view class="tool-btn" bindtap="addManually">
+        <cover-view class="tool-icon">➕</cover-view>
+      </cover-view>
+      <cover-view class="tool-btn" bindtap="exportRoute">
+        <cover-view class="tool-icon">📤</cover-view>
+      </cover-view>
+    </cover-view>
+
+  </map>
+
+  <!-- 底部景点详情面板 -->
+  <view class="bottom-panel {{showAttractionList ? 'expanded' : 'collapsed'}}">
+    <!-- 面板头部 -->
+    <view class="panel-header" bindtap="toggleList">
+      <view class="panel-header-left">
+        <text class="panel-title">🗺️ 行程路线</text>
+        <text class="panel-count">{{attractions.length}}个景点 · 约{{totalTimeText}}</text>
+      </view>
+      <view class="panel-toggle-btn">
+        <text class="toggle-icon">{{showAttractionList ? '▼' : '▲'}}</text>
+      </view>
+    </view>
+    
+    <!-- 景点列表 -->
+    <scroll-view wx:if="{{showAttractionList}}" class="attraction-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+      <!-- 空状态 -->
+      <view wx:if="{{attractions.length === 0}}" class="empty-state">
+        <view class="empty-icon">🗺️</view>
+        <text class="empty-title">暂无景点数据</text>
+        <text class="empty-desc">行程内容为空或未识别到景点</text>
+        <view class="empty-actions">
+          <button class="action-btn-empty" bindtap="reparse">🔄 重新解析</button>
+          <button class="action-btn-empty primary" bindtap="addManually">➕ 手动添加</button>
+        </view>
+      </view>
+
+      <!-- 景点时间线 -->
+      <view wx:if="{{attractions.length > 0}}" class="timeline">
+        <view 
+          wx:for="{{attractions}}" 
+          wx:key="id" 
+          class="timeline-item {{selectedAttractionId === item.id ? 'active' : ''}}"
+          bindtap="focusAttraction" 
+          data-id="{{item.id}}">
+          
+          <!-- 时间线左侧 -->
+          <view class="timeline-left">
+            <view class="timeline-number" style="background: {{item.id <= 8 ? ['#FF5722','#4CAF50','#2196F3','#9C27B0','#FF9800','#00BCD4','#E91E63','#3F51B5'][item.id-1] : '#999'}}">
+              {{item.id}}
+            </view>
+            <view class="timeline-line" wx:if="{{index < attractions.length - 1}}">
+              <view class="line-solid"></view>
+              <view class="line-distance" wx:if="{{item.distanceToNext}}">{{item.distanceToNext}}km</view>
+            </view>
+          </view>
+          
+          <!-- 景点卡片 -->
+          <view class="timeline-card">
+            <view class="card-header">
+              <view class="card-title-row">
+                <text class="card-name">{{item.name}}</text>
+                <view class="card-source {{item.source === 'local_db' ? 'local' : 'api'}}">
+                  {{item.source === 'local_db' ? '📚' : item.source === 'amap_poi' ? '🔍' : '📍'}}
+                </view>
+              </view>
+              <view class="card-location" wx:if="{{item.address}}">
+                <text class="location-icon">📍</text>
+                <text class="location-text">{{item.address}}</text>
+              </view>
+            </view>
+            
+            <view class="card-footer">
+              <view class="card-coords">
+                <text class="coords-text">{{item.latitude.toFixed(4)}}, {{item.longitude.toFixed(4)}}</text>
+              </view>
+              <view class="card-actions">
+                <view class="card-btn" catchtap="onMarkerTap" data-id="{{item.id}}">详情</view>
+                <view class="card-btn nav" catchtap="quickNavigate" data-id="{{item.id}}">导航</view>
+              </view>
+            </view>
+
+            <!-- 排序和删除按钮 -->
+            <view class="card-controls">
+              <view class="control-btn {{index === 0 ? 'disabled' : ''}}" catchtap="moveUp" data-id="{{item.id}}">↑</view>
+              <view class="control-btn {{index === attractions.length - 1 ? 'disabled' : ''}}" catchtap="moveDown" data-id="{{item.id}}">↓</view>
+              <view class="control-btn delete" catchtap="removeAttraction" data-id="{{item.id}}">×</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 底部操作区 -->
+      <view wx:if="{{attractions.length > 0}}" class="list-footer">
+        <view class="footer-stats">
+          <view class="stat-item">
+            <text class="stat-value">{{attractions.length}}</text>
+            <text class="stat-label">景点</text>
+          </view>
+          <view class="stat-divider"></view>
+          <view class="stat-item">
+            <text class="stat-value">{{totalDistance}}</text>
+            <text class="stat-label">公里</text>
+          </view>
+          <view class="stat-divider"></view>
+          <view class="stat-item">
+            <text class="stat-value">{{totalTimeText}}</text>
+            <text class="stat-label">预计</text>
+          </view>
+        </view>
+        
+        <view class="footer-actions">
+          <button class="footer-btn" bindtap="addManually">➕ 添加景点</button>
+          <button class="footer-btn" bindtap="optimizeRoute">⚡ 优化路线</button>
+          <button class="footer-btn" bindtap="reparse">🔄 重新解析</button>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 景点详情弹窗 -->
+  <view wx:if="{{showPanel}}" class="detail-modal">
+    <view class="modal-mask" bindtap="closePanel"></view>
+    <view class="modal-content">
+      <!-- 弹窗头部 -->
+      <view class="modal-header">
+        <view class="modal-title-row">
+          <view class="modal-number" style="background: {{selectedAttraction.id <= 8 ? ['#FF5722','#4CAF50','#2196F3','#9C27B0','#FF9800','#00BCD4','#E91E63','#3F51B5'][selectedAttraction.id-1] : '#999'}}">
+            {{selectedAttraction.id}}
+          </view>
+          <text class="modal-title">{{selectedAttraction.name}}</text>
+        </view>
+        <view class="modal-close" bindtap="closePanel">×</view>
+      </view>
+      
+      <!-- 弹窗内容 -->
+      <view class="modal-body">
+        <view class="info-section">
+          <view class="info-row">
+            <view class="info-icon">📍</view>
+            <view class="info-content">
+              <text class="info-label">地址</text>
+              <text class="info-value">{{selectedAttraction.address || '暂无详细地址'}}</text>
+            </view>
+          </view>
+          
+          <view class="info-row">
+            <view class="info-icon">🌐</view>
+            <view class="info-content">
+              <text class="info-label">坐标</text>
+              <text class="info-value">{{selectedAttraction.latitude}}, {{selectedAttraction.longitude}}</text>
+            </view>
+          </view>
+          
+          <view class="info-row">
+            <view class="info-icon">📦</view>
+            <view class="info-content">
+              <text class="info-label">数据来源</text>
+              <view class="source-tag {{selectedAttraction.source === 'local_db' ? 'local' : 'api'}}">
+                {{selectedAttraction.source === 'local_db' ? '本地数据库' : selectedAttraction.source === 'amap_poi' ? '高德POI搜索' : selectedAttraction.source === 'amap_geo' ? '高德地理编码' : '手动添加'}}
+              </view>
+            </view>
+          </view>
+
+          <view class="info-row" wx:if="{{selectedAttraction.distanceToNext}}">
+            <view class="info-icon">➡️</view>
+            <view class="info-content">
+              <text class="info-label">到下一站</text>
+              <text class="info-value highlight">{{selectedAttraction.distanceToNext}} 公里</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 弹窗底部按钮 -->
+      <view class="modal-footer">
+        <button class="modal-btn checkin" bindtap="checkinAttraction">
+          <text class="btn-icon">📸</text>
+          <text>打卡</text>
+        </button>
+        <button class="modal-btn primary" bindtap="navigateTo">
+          <text class="btn-icon">🧭</text>
+          <text>导航前往</text>
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 调试信息面板 -->
+  <view wx:if="{{showDebugInfo}}" class="debug-modal">
+    <view class="modal-mask" bindtap="toggleDebug"></view>
+    <view class="debug-content">
+      <view class="debug-header">
+        <text class="debug-title">🔧 调试信息</text>
+        <view class="modal-close" bindtap="toggleDebug">×</view>
+      </view>
+      <scroll-view class="debug-scroll" scroll-y>
+        <view class="debug-section">
+          <text class="section-label">📋 基本信息</text>
+          <view class="debug-item">
+            <text>行程ID: {{planId}}</text>
+          </view>
+          <view class="debug-item">
+            <text>识别城市: {{city}}</text>
+          </view>
+          <view class="debug-item">
+            <text>目的地: {{plan.destination}}</text>
+          </view>
+        </view>
+        
+        <view class="debug-section">
+          <text class="section-label">📊 解析统计</text>
+          <view class="debug-item">
+            <text>提取景点: {{debugInfo.extractedNames.length}}个</text>
+          </view>
+          <view class="debug-item success">
+            <text>定位成功: {{debugInfo.successCount}}个</text>
+          </view>
+          <view class="debug-item fail">
+            <text>定位失败: {{debugInfo.failedCount}}个</text>
+          </view>
+        </view>
+        
+        <view class="debug-section">
+          <text class="section-label">📝 提取的景点名称</text>
+          <view class="debug-tags">
+            <text wx:for="{{debugInfo.extractedNames}}" wx:key="index" class="debug-tag">{{item}}</text>
+            <text wx:if="{{debugInfo.extractedNames.length === 0}}" class="debug-empty">无</text>
+          </view>
+        </view>
+        
+        <view class="debug-section">
+          <text class="section-label">📄 原始行程文本</text>
+          <view class="debug-text-box">
+            <text>{{debugInfo.rawText || '无'}}</text>
+          </view>
+        </view>
+      </scroll-view>
+      <view class="debug-footer">
+        <button class="debug-btn" bindtap="reparse">🔄 重新解析</button>
+        <button class="debug-btn primary" bindtap="addManually">➕ 添加景点</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 浮动调试按钮 -->
+  <view class="float-debug-btn" bindtap="toggleDebug">🔧</view>
+</view>

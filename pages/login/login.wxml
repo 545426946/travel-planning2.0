@@ -9,16 +9,31 @@
   <!-- 主要内容区域 -->
   <view class="main-content">
     <!-- Logo 和标题 -->
-    <view class="logo-section">
-      <image class="logo" src="/pages/image/logo.png" mode="aspectFit" binderror="onImageError"></image>
-      <text class="app-name">轻松旅行规划</text>
-      <text class="app-slogan">让旅行更简单，让体验更精彩</text>
-    </view>
+  <view class="logo-section">
+    <image class="logo" src="/pages/image/logo.png" mode="aspectFit" binderror="onImageError"></image>
+    <text class="app-name">轻松旅行规划</text>
+    <text class="app-slogan">让旅行更简单，让体验更精彩</text>
+  </view>
+
+  <!-- 常驻微信登录按钮（上移到顶部，确保可见） -->
+  <view class="wechat-login">
+    <button 
+      class="login-btn wechat-btn primary" 
+      open-type="getUserInfo"
+      bindgetuserinfo="handleWechatLoginWithUserInfo"
+      loading="{{isLoading}}"
+      disabled="{{isLoading}}"
+      hover-class="button-hover"
+    >
+      <text class="wechat-logo">🟢</text>
+      {{isLoading ? '登录中...' : '使用微信登录'}}
+    </button>
+  </view>
 
     <!-- 登录方式切换 -->
     <view class="login-type-switch">
       <view 
-        class="switch-item {{loginType === 0 ? 'active' : ''}}" 
+        class="switch-item {{loginType == 0 ? 'active' : ''}}" 
         bindtap="switchLoginType" 
         data-type="0"
       >
@@ -26,7 +41,7 @@
         <text>账号登录</text>
       </view>
       <view 
-        class="switch-item {{loginType === 1 ? 'active' : ''}}" 
+        class="switch-item {{loginType == 1 ? 'active' : ''}}" 
         bindtap="switchLoginType" 
         data-type="1"
       >
@@ -36,7 +51,7 @@
     </view>
 
     <!-- 账号密码登录表单 -->
-    <view class="login-form" wx:if="{{loginType === 0}}">
+    <view class="login-form" wx:if="{{loginType == 0}}">
       <!-- 用户名输入 -->
       <view class="form-group">
         <view class="input-wrapper {{formErrors.username ? 'error' : ''}}">
@@ -103,13 +118,12 @@
     </view>
 
     <!-- 微信登录区域 -->
-    <view class="wechat-login" wx:if="{{loginType === 1}}">
+    <view class="wechat-login" wx:if="{{loginType == 1}}">
       <view class="wechat-tips">
         <text class="tips-icon">🔐</text>
         <text class="tips-text">微信登录安全快捷</text>
       </view>
 
-      <!-- 微信授权登录按钮 - 唯一登录方式 -->
       <button 
         class="login-btn wechat-btn primary" 
         open-type="getUserInfo"
@@ -119,13 +133,24 @@
         hover-class="button-hover"
       >
         <text class="wechat-logo">🟢</text>
-        {{isLoading ? '登录中...' : '微信登录'}}
+        {{isLoading ? '登录中...' : '微信授权登录'}}
+      </button>
+
+      <button 
+        class="login-btn wechat-btn secondary" 
+        bindtap="wechatLoginWithProfile"
+        loading="{{isLoading}}"
+        disabled="{{isLoading}}"
+        hover-class="button-hover"
+      >
+        <text class="wechat-logo">🟢</text>
+        {{isLoading ? '登录中...' : '微信资料登录'}}
       </button>
 
       <!-- 微信登录说明 -->
       <view class="wechat-desc">
-        <text class="auth-hint">🔐 需要授权获取微信信息才能登录</text>
-        <text class="auth-hint">📱 请点击上方按钮进行微信授权登录</text>
+        <text class="auth-hint">🔐 可选择授权登录或资料登录</text>
+        <text class="auth-hint">📱 开发工具受限时用“微信资料登录”</text>
         <text>登录即表示同意</text>
         <text class="link-text" bindtap="viewUserAgreement">《用户协议》</text>
         <text>和</text>

@@ -13,7 +13,34 @@ Page({
     // 加载状态
     loading: true,
     // 每日行程数据
-    dailyItinerary: []
+    dailyItinerary: [],
+    // 编辑模式
+    editMode: false,
+    // 正在编辑的活动
+    editingActivity: null,
+    editingDayIndex: -1,
+    editingActivityIndex: -1,
+    // 显示添加活动弹窗
+    showAddModal: false,
+    // 新活动表单
+    newActivity: {
+      time: '09:00',
+      title: '',
+      location: '',
+      price: ''
+    },
+    // 显示编辑基本信息弹窗
+    showEditBasicModal: false,
+    // 基本信息编辑表单
+    editBasicForm: {
+      title: '',
+      destination: '',
+      description: '',
+      budget: '',
+      travelers: 1
+    },
+    // 保存状态
+    saving: false
   },
 
   onLoad(options) {
@@ -553,16 +580,347 @@ Page({
     this.setData({ selectedDay: day })
   },
 
-  // 添加活动
-  addActivity() {
-    wx.showToast({
-      title: '功能开发中',
-      icon: 'none'
+  // 切换编辑模式
+  toggleEditMode() {
+    this.setData({
+      editMode: !this.data.editMode,
+      editingActivity: null,
+      editingDayIndex: -1,
+      editingActivityIndex: -1
+    })
+    
+    if (this.data.editMode) {
+      wx.showToast({
+        title: '已进入编辑模式',
+        icon: 'none'
+      })
+    }
+  },
+
+  // 显示添加活动弹窗
+  showAddActivityModal() {
+    this.setData({
+      showAddModal: true,
+      newActivity: {
+        time: '09:00',
+        title: '',
+        location: '',
+        price: ''
+      }
     })
   },
 
-  // 高德地图导航
-  navigateToMap() {
+  // 隐藏添加活动弹窗
+  hideAddModal() {
+    this.setData({
+      showAddModal: false
+    })
+  },
+
+  // 新活动表单输入
+  onNewActivityInput(e) {
+    const field = e.currentTarget.dataset.field
+    this.setData({
+      [`newActivity.${field}`]: e.detail.value
+    })
+  },
+
+  // 时间选择
+  onTimeChange(e) {
+    this.setData({
+      'newActivity.time': e.detail.value
+    })
+  },
+
+  // 添加活动
+  addActivity() {
+    const { newActivity, selectedDay, dailyItinerary } = this.data
+    
+    if (!newActivity.title.trim()) {
+      wx.showToast({
+        title: '请输入活动名称',
+        icon: 'none'
+      })
+      return
+    }
+
+    const dayIndex = dailyItinerary.findIndex(d => d.day === selectedDay)
+    if (dayIndex === -1) return
+
+    const activity = {
+      time: newActivity.time,
+      title: newActivity.title.trim(),
+      location: newActivity.location.trim(),
+      price: newActivity.price ? parseFloat(newActivity.price) : null,
+      type: this.getActivityType(newActivity.time, newActivity.title)
+    }
+
+    // 添加到当天的活动列表
+    const activities = [...dailyItinerary[dayIndex].activities, activity]
+    
+    // 按时间排序
+    activities.sort((a, b) => {
+      const timeA = a.time.replace(/[^0-9:]/g, '').split(':')[0] || '00'
+      const timeB = b.time.replace(/[^0-9:]/g, '').split(':')[0] || '00'
+      return parseInt(timeA) - parseInt(timeB)
+    })
+
+    this.setData({
+      [`dailyItinerary[${dayIndex}].activities`]: activities,
+      showAddModal: false
+    })
+
+    // 保存到数据库
+    this.saveItinerary()
+  },
+
+  // 编辑活动
+  editActivity(e) {
+    if (!this.data.editMode) return
+    
+    const { dayIndex, activityIndex } = e.currentTarget.dataset
+    const activity = this.data.dailyItinerary[dayIndex].activities[activityIndex]
+    
+    this.setData({
+      editingActivity: { ...activity },
+      editingDayIndex: dayIndex,
+      editingActivityIndex: activityIndex
+    })
+  },
+
+  // 编辑活动表单输入
+  onEditActivityInput(e) {
+    const field = e.currentTarget.dataset.field
+    this.setData({
+      [`editingActivity.${field}`]: e.detail.value
+    })
+  },
+
+  // 编辑活动时间选择
+  onEditTimeChange(e) {
+    this.setData({
+      'editingActivity.time': e.detail.value
+    })
+  },
+
+  // 保存编辑的活动
+  saveEditActivity() {
+    const { editingActivity, editingDayIndex, editingActivityIndex, dailyItinerary } = this.data
+    
+    if (!editingActivity.title.trim()) {
+      wx.showToast({
+        title: '活动名称不能为空',
+        icon: 'none'
+      })
+      return
+    }
+
+    const activities = [...dailyItinerary[editingDayIndex].activities]
+    activities[editingActivityIndex] = {
+      ...editingActivity,
+      title: editingActivity.title.trim(),
+      location: editingActivity.location?.trim() || '',
+      price: editingActivity.price ? parseFloat(editingActivity.price) : null,
+      type: this.getActivityType(editingActivity.time, editingActivity.title)
+    }
+
+    // 按时间排序
+    activities.sort((a, b) => {
+      const timeA = a.time.replace(/[^0-9:]/g, '').split(':')[0] || '00'
+      const timeB = b.time.replace(/[^0-9:]/g, '').split(':')[0] || '00'
+      return parseInt(timeA) - parseInt(timeB)
+    })
+
+    this.setData({
+      [`dailyItinerary[${editingDayIndex}].activities`]: activities,
+      editingActivity: null,
+      editingDayIndex: -1,
+      editingActivityIndex: -1
+    })
+
+    this.saveItinerary()
+  },
+
+  // 取消编辑活动
+  cancelEditActivity() {
+    this.setData({
+      editingActivity: null,
+      editingDayIndex: -1,
+      editingActivityIndex: -1
+    })
+  },
+
+  // 删除活动
+  deleteActivity(e) {
+    const { dayIndex, activityIndex } = e.currentTarget.dataset
+    
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要删除这个活动吗？',
+      success: (res) => {
+        if (res.confirm) {
+          const activities = [...this.data.dailyItinerary[dayIndex].activities]
+          activities.splice(activityIndex, 1)
+          
+          this.setData({
+            [`dailyItinerary[${dayIndex}].activities`]: activities
+          })
+          
+          this.saveItinerary()
+        }
+      }
+    })
+  },
+
+  // 显示编辑基本信息弹窗
+  showEditBasicInfo() {
+    const { plan } = this.data
+    this.setData({
+      showEditBasicModal: true,
+      editBasicForm: {
+        title: plan.title || '',
+        destination: plan.destination || '',
+        description: plan.description || '',
+        budget: plan.budget ? String(plan.budget) : '',
+        travelers: plan.travelers || 1
+      }
+    })
+  },
+
+  // 隐藏编辑基本信息弹窗
+  hideEditBasicModal() {
+    this.setData({
+      showEditBasicModal: false
+    })
+  },
+
+  // 基本信息表单输入
+  onBasicFormInput(e) {
+    const field = e.currentTarget.dataset.field
+    this.setData({
+      [`editBasicForm.${field}`]: e.detail.value
+    })
+  },
+
+  // 保存基本信息
+  async saveBasicInfo() {
+    const { editBasicForm, planId } = this.data
+    
+    if (!editBasicForm.title.trim()) {
+      wx.showToast({
+        title: '请输入行程标题',
+        icon: 'none'
+      })
+      return
+    }
+
+    this.setData({ saving: true })
+
+    try {
+      const { error } = await supabase
+        .from('travel_plans')
+        .update({
+          title: editBasicForm.title.trim(),
+          destination: editBasicForm.destination.trim(),
+          description: editBasicForm.description.trim(),
+          total_budget: parseFloat(editBasicForm.budget) || 0,
+          travelers_count: parseInt(editBasicForm.travelers) || 1
+        })
+        .eq('id', planId)
+
+      if (error) throw error
+
+      // 更新本地数据
+      this.setData({
+        'plan.title': editBasicForm.title.trim(),
+        'plan.destination': editBasicForm.destination.trim(),
+        'plan.description': editBasicForm.description.trim(),
+        'plan.budget': parseFloat(editBasicForm.budget) || 0,
+        'plan.travelers': parseInt(editBasicForm.travelers) || 1,
+        showEditBasicModal: false,
+        saving: false
+      })
+
+      wx.showToast({
+        title: '保存成功',
+        icon: 'success'
+      })
+    } catch (error) {
+      console.error('保存基本信息失败:', error)
+      this.setData({ saving: false })
+      wx.showToast({
+        title: '保存失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  // 保存行程到数据库
+  async saveItinerary() {
+    const { dailyItinerary, planId, plan } = this.data
+    
+    // 将结构化数据转换回文本格式
+    let itineraryText = ''
+    
+    dailyItinerary.forEach(day => {
+      itineraryText += `Day ${day.day} - ${plan.startDate ? this.formatDateForDay(plan.startDate, day.day - 1) : day.date}：\n`
+      
+      if (day.activities && day.activities.length > 0) {
+        day.activities.forEach(activity => {
+          itineraryText += `${activity.time}：${activity.title}`
+          if (activity.location) {
+            itineraryText += `（${activity.location}）`
+          }
+          if (activity.price) {
+            itineraryText += ` 门票：${activity.price}元`
+          }
+          itineraryText += '\n'
+        })
+      } else {
+        itineraryText += '暂无安排\n'
+      }
+      
+      itineraryText += '\n'
+    })
+
+    try {
+      const { error } = await supabase
+        .from('travel_plans')
+        .update({ itinerary: itineraryText })
+        .eq('id', planId)
+
+      if (error) throw error
+
+      // 更新本地plan数据
+      this.setData({
+        'plan.itinerary': itineraryText
+      })
+
+      wx.showToast({
+        title: '已保存',
+        icon: 'success'
+      })
+    } catch (error) {
+      console.error('保存行程失败:', error)
+      wx.showToast({
+        title: '保存失败',
+        icon: 'none'
+      })
+    }
+  },
+
+  // 格式化日期
+  formatDateForDay(startDate, dayOffset) {
+    const date = new Date(startDate)
+    date.setDate(date.getDate() + dayOffset)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  },
+
+  // 打开地图页面
+  openMap() {
     if (!this.data.plan?.destination) {
       wx.showToast({
         title: '暂无目的地信息',
@@ -571,9 +929,8 @@ Page({
       return
     }
 
-    wx.showToast({
-      title: '功能开发中',
-      icon: 'none'
+    wx.navigateTo({
+      url: `/pages/plan-map/plan-map?id=${this.data.planId}`
     })
   },
 

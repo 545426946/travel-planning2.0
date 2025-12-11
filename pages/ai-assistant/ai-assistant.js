@@ -171,6 +171,104 @@ Page({
     })
   },
 
+  // 查询天气
+  async queryWeather() {
+    if (!this.data.userInfo) {
+      wx.showToast({
+        title: '请先登录',
+        icon: 'none'
+      })
+      return
+    }
+
+    wx.showModal({
+      title: '天气查询',
+      content: '请输入要查询的城市名称',
+      editable: true,
+      placeholderText: '例如：北京、上海、广州',
+      success: async (res) => {
+        if (res.confirm && res.content.trim()) {
+          wx.showLoading({ title: '查询天气中...' })
+
+          try {
+            const { weatherService } = require('../../utils/weather-service')
+            const city = res.content.trim()
+            const result = await weatherService.getWeather(city)
+
+            wx.hideLoading()
+
+            if (result.success) {
+              this.showWeatherResult(result.data)
+            } else {
+              // 显示模拟数据
+              this.showWeatherResult(result.data)
+              wx.showToast({
+                title: '使用模拟数据',
+                icon: 'none'
+              })
+            }
+          } catch (error) {
+            wx.hideLoading()
+            console.error('天气查询失败:', error)
+            wx.showToast({
+              title: '查询失败，请重试',
+              icon: 'none'
+            })
+          }
+        }
+      }
+    })
+  },
+
+  // 显示天气结果
+  showWeatherResult(weatherData) {
+    const current = weatherData.current
+    const forecast = weatherData.forecast
+    
+    let content = `
+🌤️ ${weatherData.city} 天气信息
+
+📍 当前天气：
+${current.icon} ${current.weather} ${current.temperature}
+💧 湿度：${current.humidity}
+💨 风力：${current.wind}
+🔵 气压：${current.pressure}
+👁️ 能见度：${current.visibility}
+☀️ 紫外线：${current.uv}
+
+📅 未来预报：
+`
+
+    // 添加未来几天的预报
+    forecast.slice(0, 5).forEach(day => {
+      content += `${day.date}：${day.icon} ${day.weather} ${day.low} ~ ${day.high} ${day.wind}
+`
+    })
+
+    // 添加穿衣和出行建议
+    const { weatherService } = require('../../utils/weather-service')
+    const clothingAdvice = weatherService.getClothingAdvice(weatherData)
+    const travelAdvice = weatherService.getTravelAdvice(weatherData)
+
+    content += `
+👔 穿衣建议：${clothingAdvice}
+🚗 出行建议：${travelAdvice}
+
+更新时间：${new Date(weatherData.updateTime).toLocaleString()}
+`
+
+    if (weatherData.mock) {
+      content += '\n⚠️ 当前为模拟数据，仅供演示使用'
+    }
+
+    wx.showModal({
+      title: '🌤️ 天气查询结果',
+      content: content.trim(),
+      showCancel: false,
+      confirmText: '知道了'
+    })
+  },
+
   // 智能推荐景点
   async getRecommendations() {
     if (!this.data.userInfo) {

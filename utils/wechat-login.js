@@ -1,10 +1,11 @@
 // utils/wechat-login.js - 微信登录服务（适配 Supabase）
 const supabase = require('./supabase').supabase
 const Auth = require('./auth').Auth
+const { SUPABASE_CONFIG } = require('./config')
 
 // Supabase 配置
-const supabaseUrl = 'https://hmnjuntvubqvbpeyqoxw.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhtbmp1bnR2dWJxdmJwZXlxb3h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MjEwNDYsImV4cCI6MjA3ODk5NzA0Nn0.BCp0_8M3OhlIhLQ4fz54le-sWqZeUx9JDRXr1XRsX8g'
+const supabaseUrl = SUPABASE_CONFIG.url
+const supabaseAnonKey = SUPABASE_CONFIG.anonKey
 
 // 微信小程序配置（请确认这些配置是否正确）
 const WECHAT_APP_ID = 'wx31db19e0efdc4d9d' // 请替换为你的实际AppID

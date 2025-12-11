@@ -71,14 +71,13 @@
         <view class="feature-arrow">→</view>
       </view>
 
-      <view class="feature-card disabled">
+      <view class="feature-card" bindtap="queryWeather">
         <view class="feature-icon">🌤️</view>
         <view class="feature-info">
           <text class="feature-title">天气查询</text>
           <text class="feature-desc">获取目的地天气信息和出行建议</text>
         </view>
         <view class="feature-arrow">→</view>
-        <view class="feature-badge">开发中</view>
       </view>
 
       <view class="feature-card disabled">

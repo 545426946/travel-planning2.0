@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "行程地图",
+  "navigationBarBackgroundColor": "#4facfe",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#f5f7fa",
+  "navigationStyle": "custom",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark"
+}

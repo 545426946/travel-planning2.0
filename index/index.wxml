@@ -22,10 +22,33 @@
       </view>
     </view>
     
-    <view class="map-section">
-      <view class="section-title">探索地图</view>
-      <view class="map-container">
-        <image class="map-image" src="https://picsum.photos/seed/map/800/400.jpg" mode="widthFix"></image>
+    <!-- 足迹入口卡片 -->
+    <view class="footprint-entry" bindtap="goToFootprint">
+      <view class="footprint-bg">
+        <view class="footprint-content">
+          <view class="footprint-left">
+            <text class="footprint-icon">🗺️</text>
+            <view class="footprint-text">
+              <text class="footprint-title">我的足迹</text>
+              <text class="footprint-desc">记录旅行轨迹，点亮去过的城市</text>
+            </view>
+          </view>
+          <view class="footprint-arrow">›</view>
+        </view>
+        <view class="footprint-stats">
+          <view class="fs-item">
+            <text class="fs-num">{{footprintStats.provinces || 0}}</text>
+            <text class="fs-label">省份</text>
+          </view>
+          <view class="fs-item">
+            <text class="fs-num">{{footprintStats.cities || 0}}</text>
+            <text class="fs-label">城市</text>
+          </view>
+          <view class="fs-item">
+            <text class="fs-num">{{footprintStats.attractions || 0}}</text>
+            <text class="fs-label">足迹</text>
+          </view>
+        </view>
       </view>
     </view>
     

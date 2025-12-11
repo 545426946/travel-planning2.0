@@ -178,7 +178,7 @@ serve(async (req) => {
     // 查询或创建用户
     console.log('🔍 查询或创建用户记录...')
     const { data: existingUser, error: fetchError } = await supabase
-      .from('app_users')
+      .from('users')
       .select('*')
       .eq('openid', openid)
       .single()
@@ -200,7 +200,7 @@ serve(async (req) => {
       // 更新最后登录时间
       console.log('🔄 更新用户登录信息...')
       const { error: updateError } = await supabase
-        .from('app_users')
+        .from('users')
         .update({
           last_login_time: new Date().toISOString()
         })
@@ -258,7 +258,7 @@ serve(async (req) => {
       }
 
       const { data: createdUser, error: createError } = await supabase
-        .from('app_users')
+        .from('users')
         .insert(newUser)
         .select()
         .single()

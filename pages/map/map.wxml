@@ -1,0 +1,212 @@
+<!-- 足迹地图主页 -->
+<view class="container">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-mask">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 顶部统计卡片 -->
+  <view class="stats-card">
+    <view class="stats-item">
+      <text class="stats-num">{{stats.totalProvinces}}</text>
+      <text class="stats-label">省份</text>
+    </view>
+    <view class="stats-divider"></view>
+    <view class="stats-item">
+      <text class="stats-num">{{stats.totalCities}}</text>
+      <text class="stats-label">城市</text>
+    </view>
+    <view class="stats-divider"></view>
+    <view class="stats-item">
+      <text class="stats-num">{{stats.totalAttractions}}</text>
+      <text class="stats-label">足迹</text>
+    </view>
+    <view class="stats-divider"></view>
+    <view class="stats-item">
+      <text class="stats-num">{{stats.totalDistance > 9999 ? (stats.totalDistance / 10000).toFixed(1) + '万' : stats.totalDistance}}</text>
+      <text class="stats-label">公里</text>
+    </view>
+  </view>
+
+  <!-- Tab切换 -->
+  <view class="tab-bar">
+    <view class="tab-item {{currentTab === 'map' ? 'active' : ''}}" bindtap="switchTab" data-tab="map">
+      <text class="tab-icon">🗺️</text>
+      <text class="tab-text">地图</text>
+    </view>
+    <view class="tab-item {{currentTab === 'list' ? 'active' : ''}}" bindtap="switchTab" data-tab="list">
+      <text class="tab-icon">📍</text>
+      <text class="tab-text">足迹</text>
+    </view>
+    <view class="tab-item {{currentTab === 'stats' ? 'active' : ''}}" bindtap="switchTab" data-tab="stats">
+      <text class="tab-icon">🏆</text>
+      <text class="tab-text">成就</text>
+    </view>
+  </view>
+
+  <!-- 地图视图 -->
+  <view wx:if="{{currentTab === 'map'}}" class="map-container">
+    <map
+      id="footprintMap"
+      class="map"
+      latitude="{{latitude}}"
+      longitude="{{longitude}}"
+      scale="{{scale}}"
+      markers="{{markers}}"
+      polyline="{{polyline}}"
+      show-location="{{true}}"
+      enable-zoom="{{true}}"
+      enable-scroll="{{true}}"
+      bindmarkertap="onMarkerTap">
+      
+      <!-- 地图工具栏 -->
+      <cover-view class="map-toolbar">
+        <cover-view class="toolbar-btn" bindtap="locateMe">
+          <cover-view class="btn-icon">📍</cover-view>
+        </cover-view>
+        <cover-view class="toolbar-btn" bindtap="showAllFootprints">
+          <cover-view class="btn-icon">🌍</cover-view>
+        </cover-view>
+      </cover-view>
+    </map>
+
+    <!-- 打卡按钮 -->
+    <view class="checkin-btn" bindtap="goCheckin">
+      <text class="checkin-icon">📸</text>
+      <text class="checkin-text">打卡</text>
+    </view>
+  </view>
+
+  <!-- 足迹列表视图 -->
+  <view wx:if="{{currentTab === 'list'}}" class="list-container">
+    <scroll-view class="footprint-list" scroll-y>
+      <!-- 空状态 -->
+      <view wx:if="{{footprints.length === 0}}" class="empty-state">
+        <text class="empty-icon">🗺️</text>
+        <text class="empty-title">还没有足迹</text>
+        <text class="empty-desc">去打卡记录你的第一个足迹吧</text>
+        <button class="empty-btn" bindtap="goCheckin">立即打卡</button>
+      </view>
+
+      <!-- 足迹列表 -->
+      <view wx:for="{{footprints}}" wx:key="id" class="footprint-item" bindtap="onFootprintTap" data-index="{{index}}">
+        <view class="fp-marker">
+          <text class="fp-marker-icon">📍</text>
+        </view>
+        <view class="fp-content">
+          <text class="fp-name">{{item.name}}</text>
+          <view class="fp-meta">
+            <text class="fp-location">{{item.city || item.province}}</text>
+            <text class="fp-time">{{item.checkin_time}}</text>
+          </view>
+          <text wx:if="{{item.note}}" class="fp-note">{{item.note}}</text>
+        </view>
+        <view class="fp-arrow">›</view>
+      </view>
+
+      <!-- 底部提示 -->
+      <view wx:if="{{footprints.length > 0}}" class="list-footer">
+        <text>共 {{footprints.length}} 条足迹</text>
+      </view>
+    </scroll-view>
+
+    <!-- 打卡按钮 -->
+    <view class="checkin-btn fixed" bindtap="goCheckin">
+      <text class="checkin-icon">📸</text>
+      <text class="checkin-text">打卡</text>
+    </view>
+  </view>
+
+  <!-- 成就视图 -->
+  <view wx:if="{{currentTab === 'stats'}}" class="stats-container">
+    <scroll-view class="stats-scroll" scroll-y>
+      <!-- 省份点亮 -->
+      <view class="section">
+        <view class="section-header">
+          <text class="section-title">🏅 省份点亮</text>
+          <text class="section-sub">{{stats.totalProvinces}}/34</text>
+        </view>
+        
+        <view class="province-grid">
+          <view 
+            wx:for="{{provinces}}" 
+            wx:key="code" 
+            class="province-item {{visitedProvinces.indexOf(item.name) > -1 ? 'visited' : ''}}"
+            bindtap="onProvinceTap"
+            data-province="{{item}}">
+            <text class="province-name">{{item.name}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 旅行数据 -->
+      <view class="section">
+        <view class="section-header">
+          <text class="section-title">📊 旅行数据</text>
+        </view>
+        
+        <view class="data-cards">
+          <view class="data-card">
+            <text class="data-icon">🚶</text>
+            <text class="data-value">{{stats.totalDistance}}</text>
+            <text class="data-unit">公里</text>
+            <text class="data-label">总里程</text>
+          </view>
+          <view class="data-card">
+            <text class="data-icon">📍</text>
+            <text class="data-value">{{stats.totalAttractions}}</text>
+            <text class="data-unit">个</text>
+            <text class="data-label">打卡点</text>
+          </view>
+          <view class="data-card">
+            <text class="data-icon">🏙️</text>
+            <text class="data-value">{{stats.totalCities}}</text>
+            <text class="data-unit">座</text>
+            <text class="data-label">城市</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 成就徽章 -->
+      <view class="section">
+        <view class="section-header">
+          <text class="section-title">🎖️ 成就徽章</text>
+        </view>
+        
+        <view class="badge-grid">
+          <view class="badge-item {{stats.totalAttractions >= 1 ? 'unlocked' : ''}}">
+            <text class="badge-icon">🌟</text>
+            <text class="badge-name">初次打卡</text>
+          </view>
+          <view class="badge-item {{stats.totalAttractions >= 10 ? 'unlocked' : ''}}">
+            <text class="badge-icon">🎯</text>
+            <text class="badge-name">打卡达人</text>
+          </view>
+          <view class="badge-item {{stats.totalCities >= 5 ? 'unlocked' : ''}}">
+            <text class="badge-icon">🏃</text>
+            <text class="badge-name">城市探索者</text>
+          </view>
+          <view class="badge-item {{stats.totalProvinces >= 5 ? 'unlocked' : ''}}">
+            <text class="badge-icon">🗺️</text>
+            <text class="badge-name">省份收集家</text>
+          </view>
+          <view class="badge-item {{stats.totalDistance >= 1000 ? 'unlocked' : ''}}">
+            <text class="badge-icon">✈️</text>
+            <text class="badge-name">千里之行</text>
+          </view>
+          <view class="badge-item {{stats.totalProvinces >= 10 ? 'unlocked' : ''}}">
+            <text class="badge-icon">🏆</text>
+            <text class="badge-name">旅行大师</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 分享按钮 -->
+      <button class="share-btn" open-type="share">
+        <text class="share-icon">📤</text>
+        <text>分享我的足迹</text>
+      </button>
+    </scroll-view>
+  </view>
+</view>

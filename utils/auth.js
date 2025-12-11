@@ -257,6 +257,28 @@ class Auth {
   static generateToken(userId) {
     return `token_${userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
+
+  static getAuthToken() {
+    try {
+      return wx.getStorageSync('authToken') || null
+    } catch (e) {
+      return null
+    }
+  }
+
+  static async validateSessionToken(supabase) {
+    const token = this.getAuthToken()
+    if (!token) return false
+    try {
+      const { data, error } = await supabase.rpc('check_user_session', { token_text: token })
+      if (error) return false
+      if (!data) return false
+      const row = Array.isArray(data) ? data[0] : data
+      return !!(row && row.is_valid)
+    } catch (e) {
+      return false
+    }
+  }
 }
 
 module.exports = { Auth }

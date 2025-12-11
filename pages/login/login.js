@@ -14,7 +14,7 @@ if (wechatLogin) {
 Page({
   data: {
     // 登录方式：0 - 账号密码，1 - 微信登录
-    loginType: 0,
+    loginType: 1,
     // 表单数据
     formData: {
       username: '',

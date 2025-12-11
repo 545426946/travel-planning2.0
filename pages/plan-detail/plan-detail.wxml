@@ -11,13 +11,23 @@
       <text>← 返回行程列表</text>
     </view>
 
+    <!-- 编辑模式指示器 -->
+    <view wx:if="{{editMode}}" class="edit-mode-indicator">
+      <text>📝 编辑模式 - 点击活动可编辑</text>
+    </view>
+
     <!-- 头部信息 -->
-    <view class="plan-header">
+    <view class="plan-header" bindtap="{{editMode ? 'showEditBasicInfo' : ''}}">
       <image class="header-image" src="{{plan.image}}" mode="aspectFill" />
       
       <view class="header-overlay">
         <view class="header-content">
-          <text class="plan-title">{{plan.title}}</text>
+          <view class="title-row">
+            <text class="plan-title">{{plan.title}}</text>
+            <view wx:if="{{editMode}}" class="edit-hint">
+              <text>点击编辑</text>
+            </view>
+          </view>
           
           <view class="plan-badges">
             <view wx:if="{{plan.isAIGenerated}}" class="badge ai-badge">
@@ -56,17 +66,17 @@
 
     <!-- 操作按钮 -->
     <view class="action-bar">
-      <button class="action-btn" bindtap="editPlan">
-        <text class="icon">✏️</text>
-        <text>编辑</text>
+      <button class="action-btn {{editMode ? 'active' : ''}}" bindtap="toggleEditMode">
+        <text class="icon">{{editMode ? '✅' : '✏️'}}</text>
+        <text>{{editMode ? '完成' : '编辑'}}</text>
+      </button>
+      <button class="action-btn" bindtap="openMap">
+        <text class="icon">🗺️</text>
+        <text>地图</text>
       </button>
       <button class="action-btn" bindtap="changeStatus">
         <text class="icon">🔄</text>
         <text>状态</text>
-      </button>
-      <button class="action-btn" bindtap="duplicatePlan">
-        <text class="icon">📋</text>
-        <text>复制</text>
       </button>
       <button class="action-btn" bindtap="showMoreActions">
         <text class="icon">⋯</text>
@@ -93,37 +103,99 @@
       </scroll-view>
 
       <!-- 每日详情 -->
-      <view wx:for="{{dailyItinerary}}" wx:key="day" wx:if="{{item.day === selectedDay}}">
+      <view wx:for="{{dailyItinerary}}" wx:key="day" wx:if="{{item.day === selectedDay}}" wx:for-index="dayIdx">
         <view class="daily-content">
+          <!-- 添加活动按钮 -->
+          <view wx:if="{{editMode}}" class="add-activity-btn" bindtap="showAddActivityModal">
+            <text class="icon">➕</text>
+            <text>添加活动</text>
+          </view>
+
           <!-- 如果有结构化的活动 -->
           <view wx:if="{{item.activities && item.activities.length > 0}}" class="activities-list">
             <view wx:for="{{item.activities}}" 
                   wx:key="index" 
                   wx:for-item="activity"
-                  class="activity-card">
-              <view class="activity-time-bar">
-                <text class="time-label">{{activity.time}}</text>
-              </view>
+                  wx:for-index="actIdx"
+                  class="activity-card {{editMode ? 'editable' : ''}} {{editingDayIndex === dayIdx && editingActivityIndex === actIdx ? 'editing' : ''}}"
+                  bindtap="editActivity"
+                  data-day-index="{{dayIdx}}"
+                  data-activity-index="{{actIdx}}">
               
-              <view class="activity-content">
-                <view class="activity-header">
-                  <text class="activity-title">{{activity.title}}</text>
-                  <view wx:if="{{activity.price}}" class="activity-price">
-                    <text>¥{{activity.price}}</text>
-                  </view>
+              <!-- 正在编辑这个活动 -->
+              <view wx:if="{{editingDayIndex === dayIdx && editingActivityIndex === actIdx}}" class="activity-edit-form">
+                <view class="edit-form-row">
+                  <text class="edit-label">时间</text>
+                  <picker mode="time" value="{{editingActivity.time}}" bindchange="onEditTimeChange">
+                    <view class="time-picker">{{editingActivity.time}}</view>
+                  </picker>
+                </view>
+                <view class="edit-form-row">
+                  <text class="edit-label">活动</text>
+                  <input class="edit-input" value="{{editingActivity.title}}" 
+                         data-field="title" bindinput="onEditActivityInput" 
+                         placeholder="活动名称" />
+                </view>
+                <view class="edit-form-row">
+                  <text class="edit-label">地点</text>
+                  <input class="edit-input" value="{{editingActivity.location}}" 
+                         data-field="location" bindinput="onEditActivityInput" 
+                         placeholder="地点（选填）" />
+                </view>
+                <view class="edit-form-row">
+                  <text class="edit-label">费用</text>
+                  <input class="edit-input" type="digit" value="{{editingActivity.price}}" 
+                         data-field="price" bindinput="onEditActivityInput" 
+                         placeholder="费用（选填）" />
+                </view>
+                <view class="edit-form-actions">
+                  <button class="edit-btn save-btn" bindtap="saveEditActivity">保存</button>
+                  <button class="edit-btn cancel-btn" catchtap="cancelEditActivity">取消</button>
+                  <button class="edit-btn delete-btn" catchtap="deleteActivity" 
+                          data-day-index="{{dayIdx}}" data-activity-index="{{actIdx}}">删除</button>
+                </view>
+              </view>
+
+              <!-- 正常显示活动 -->
+              <view wx:else class="activity-display">
+                <view class="activity-time-bar">
+                  <text class="time-label">{{activity.time}}</text>
                 </view>
                 
-                <view wx:if="{{activity.location}}" class="activity-location">
-                  <text class="icon">📍</text>
-                  <text>{{activity.location}}</text>
+                <view class="activity-content">
+                  <view class="activity-header">
+                    <text class="activity-title">{{activity.title}}</text>
+                    <view wx:if="{{activity.price}}" class="activity-price">
+                      <text>¥{{activity.price}}</text>
+                    </view>
+                  </view>
+                  
+                  <view wx:if="{{activity.location}}" class="activity-location">
+                    <text class="icon">📍</text>
+                    <text>{{activity.location}}</text>
+                  </view>
+                </view>
+
+                <!-- 编辑模式下显示编辑图标 -->
+                <view wx:if="{{editMode}}" class="edit-icon">
+                  <text>✏️</text>
                 </view>
               </view>
             </view>
           </view>
 
           <!-- 如果没有结构化的活动，显示原始内容 -->
-          <view wx:else class="raw-content">
+          <view wx:elif="{{item.content && item.content !== '暂无安排'}}" class="raw-content">
             <text>{{item.content}}</text>
+          </view>
+
+          <!-- 空状态 -->
+          <view wx:else class="empty-day">
+            <text class="empty-icon">📭</text>
+            <text class="empty-text">暂无活动安排</text>
+            <view wx:if="{{editMode}}" class="empty-hint">
+              <text>点击上方"添加活动"开始规划</text>
+            </view>
           </view>
         </view>
       </view>
@@ -184,12 +256,109 @@
 
     <!-- 底部操作按钮 -->
     <view class="bottom-actions">
-      <button class="bottom-btn primary-btn" bindtap="editPlan">
-        <text>编辑行程</text>
+      <button class="bottom-btn primary-btn" bindtap="toggleEditMode">
+        <text>{{editMode ? '完成编辑' : '编辑行程'}}</text>
       </button>
       <button class="bottom-btn secondary-btn" bindtap="showMoreActions">
         <text>更多操作</text>
       </button>
+    </view>
+  </view>
+
+  <!-- 添加活动弹窗 -->
+  <view wx:if="{{showAddModal}}" class="modal-overlay" catchtap="hideAddModal">
+    <view class="modal-content" catchtap="">
+      <view class="modal-header">
+        <text class="modal-title">添加活动</text>
+        <text class="modal-close" bindtap="hideAddModal">✕</text>
+      </view>
+      
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="form-label">时间</text>
+          <picker mode="time" value="{{newActivity.time}}" bindchange="onTimeChange">
+            <view class="form-picker">{{newActivity.time}}</view>
+          </picker>
+        </view>
+        
+        <view class="form-item">
+          <text class="form-label">活动名称 *</text>
+          <input class="form-input" value="{{newActivity.title}}" 
+                 data-field="title" bindinput="onNewActivityInput" 
+                 placeholder="例如：参观故宫博物院" />
+        </view>
+        
+        <view class="form-item">
+          <text class="form-label">地点</text>
+          <input class="form-input" value="{{newActivity.location}}" 
+                 data-field="location" bindinput="onNewActivityInput" 
+                 placeholder="例如：北京市东城区" />
+        </view>
+        
+        <view class="form-item">
+          <text class="form-label">费用（元）</text>
+          <input class="form-input" type="digit" value="{{newActivity.price}}" 
+                 data-field="price" bindinput="onNewActivityInput" 
+                 placeholder="例如：60" />
+        </view>
+      </view>
+      
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="hideAddModal">取消</button>
+        <button class="modal-btn confirm" bindtap="addActivity">添加</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 编辑基本信息弹窗 -->
+  <view wx:if="{{showEditBasicModal}}" class="modal-overlay" catchtap="hideEditBasicModal">
+    <view class="modal-content large" catchtap="">
+      <view class="modal-header">
+        <text class="modal-title">编辑基本信息</text>
+        <text class="modal-close" bindtap="hideEditBasicModal">✕</text>
+      </view>
+      
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="form-label">行程标题 *</text>
+          <input class="form-input" value="{{editBasicForm.title}}" 
+                 data-field="title" bindinput="onBasicFormInput" 
+                 placeholder="给你的旅行起个名字" />
+        </view>
+        
+        <view class="form-item">
+          <text class="form-label">目的地</text>
+          <input class="form-input" value="{{editBasicForm.destination}}" 
+                 data-field="destination" bindinput="onBasicFormInput" 
+                 placeholder="例如：北京" />
+        </view>
+        
+        <view class="form-item">
+          <text class="form-label">行程描述</text>
+          <textarea class="form-textarea" value="{{editBasicForm.description}}" 
+                    data-field="description" bindinput="onBasicFormInput" 
+                    placeholder="简单描述一下这次旅行..." auto-height />
+        </view>
+        
+        <view class="form-item">
+          <text class="form-label">预算（元）</text>
+          <input class="form-input" type="digit" value="{{editBasicForm.budget}}" 
+                 data-field="budget" bindinput="onBasicFormInput" 
+                 placeholder="预计总预算" />
+        </view>
+        
+        <view class="form-item">
+          <text class="form-label">出行人数</text>
+          <input class="form-input" type="number" value="{{editBasicForm.travelers}}" 
+                 data-field="travelers" bindinput="onBasicFormInput" 
+                 placeholder="1" />
+        </view>
+      </view>
+      
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="hideEditBasicModal">取消</button>
+        <button class="modal-btn confirm" bindtap="saveBasicInfo" loading="{{saving}}">保存</button>
+      </view>
     </view>
   </view>
 </view>
