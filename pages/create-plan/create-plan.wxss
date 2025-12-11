@@ -228,3 +228,329 @@
   align-items: center;
   justify-content: center;
 }
+
+/* ========== 每日行程编辑样式 ========== */
+
+.itinerary-section {
+  background: white;
+  border-radius: 24rpx;
+  padding: 30rpx;
+  margin-top: 20rpx;
+}
+
+/* 日期选择器 */
+.day-selector {
+  margin: 20rpx -30rpx;
+  padding: 0 30rpx;
+}
+
+.day-tabs {
+  display: flex;
+  gap: 16rpx;
+  padding-bottom: 10rpx;
+}
+
+.day-tab {
+  flex-shrink: 0;
+  min-width: 120rpx;
+  padding: 16rpx 20rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #F5F7FA;
+  border-radius: 16rpx;
+  gap: 6rpx;
+  transition: all 0.3s;
+}
+
+.day-tab.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  transform: scale(1.05);
+}
+
+.day-num {
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.day-date {
+  font-size: 20rpx;
+  opacity: 0.8;
+}
+
+.activity-count {
+  font-size: 18rpx;
+  opacity: 0.7;
+}
+
+/* 当天活动 */
+.day-activities {
+  margin-top: 20rpx;
+}
+
+/* 添加活动按钮 */
+.add-activity-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  padding: 24rpx;
+  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+  border: 2rpx dashed #4CAF50;
+  border-radius: 16rpx;
+  margin-bottom: 20rpx;
+  color: #4CAF50;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.add-activity-btn:active {
+  background: #C8E6C9;
+  transform: scale(0.98);
+}
+
+.add-activity-btn .icon {
+  font-size: 32rpx;
+}
+
+/* 活动列表 */
+.activities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx;
+  background: #F8F9FA;
+  border-radius: 12rpx;
+  border-left: 6rpx solid #667eea;
+}
+
+.activity-info {
+  display: flex;
+  gap: 16rpx;
+  flex: 1;
+}
+
+.activity-time {
+  flex-shrink: 0;
+  padding: 8rpx 16rpx;
+  background: #667eea;
+  color: white;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  height: fit-content;
+}
+
+.activity-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.activity-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.activity-location {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.activity-price {
+  font-size: 24rpx;
+  color: #FF6B6B;
+}
+
+.activity-actions {
+  flex-shrink: 0;
+}
+
+.delete-btn {
+  font-size: 32rpx;
+  padding: 10rpx;
+}
+
+/* 空状态 */
+.empty-activities {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx 40rpx;
+  background: #F8F9FA;
+  border-radius: 16rpx;
+}
+
+.empty-icon {
+  font-size: 60rpx;
+  margin-bottom: 16rpx;
+}
+
+.empty-text {
+  font-size: 26rpx;
+  color: #999;
+}
+
+/* 初始化行程按钮 */
+.init-itinerary-btn {
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 16rpx;
+  border: none;
+  font-size: 30rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ========== 弹窗样式 ========== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 40rpx;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 600rpx;
+  background: white;
+  border-radius: 24rpx;
+  overflow: hidden;
+  animation: modalIn 0.3s ease;
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32rpx 40rpx;
+  border-bottom: 2rpx solid #F0F0F0;
+}
+
+.modal-title {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.modal-close {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  color: #999;
+}
+
+.modal-body {
+  padding: 40rpx;
+}
+
+.modal-form-item {
+  margin-bottom: 28rpx;
+}
+
+.modal-form-item:last-child {
+  margin-bottom: 0;
+}
+
+.modal-label {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.modal-input {
+  width: 100%;
+  height: 80rpx;
+  background: #F8F9FA;
+  border: 2rpx solid #E0E0E0;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+.modal-input:focus {
+  border-color: #667eea;
+  background: white;
+}
+
+.modal-picker {
+  width: 100%;
+  height: 80rpx;
+  background: #F8F9FA;
+  border: 2rpx solid #E0E0E0;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  display: flex;
+  align-items: center;
+  color: #333;
+  box-sizing: border-box;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 20rpx;
+  padding: 32rpx 40rpx;
+  border-top: 2rpx solid #F0F0F0;
+}
+
+.modal-btn {
+  flex: 1;
+  height: 80rpx;
+  border-radius: 40rpx;
+  border: none;
+  font-size: 28rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-btn.cancel {
+  background: #F5F7FA;
+  color: #666;
+}
+
+.modal-btn.confirm {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}

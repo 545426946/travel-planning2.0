@@ -217,6 +217,74 @@
       />
     </view>
 
+    <!-- 每日行程编辑（仅编辑模式显示） -->
+    <view wx:if="{{isEdit && dailyItinerary.length > 0}}" class="form-section itinerary-section">
+      <view class="form-label">
+        <text>📅 每日行程安排</text>
+      </view>
+      
+      <!-- 日期选择器 -->
+      <scroll-view class="day-selector" scroll-x>
+        <view class="day-tabs">
+          <view wx:for="{{dailyItinerary}}" 
+                wx:key="day"
+                class="day-tab {{selectedDay === item.day ? 'active' : ''}}"
+                bindtap="selectDay"
+                data-day="{{item.day}}">
+            <text class="day-num">第{{item.day}}天</text>
+            <text class="day-date">{{item.date}}</text>
+            <text class="activity-count">{{item.activities.length}}项</text>
+          </view>
+        </view>
+      </scroll-view>
+
+      <!-- 当天活动列表 -->
+      <view wx:for="{{dailyItinerary}}" wx:key="day" wx:if="{{item.day === selectedDay}}" wx:for-index="dayIdx">
+        <view class="day-activities">
+          <!-- 添加活动按钮 -->
+          <view class="add-activity-btn" bindtap="showAddActivity">
+            <text class="icon">➕</text>
+            <text>添加活动</text>
+          </view>
+
+          <!-- 活动列表 -->
+          <view wx:if="{{item.activities.length > 0}}" class="activities-list">
+            <view wx:for="{{item.activities}}" 
+                  wx:key="index" 
+                  wx:for-item="activity"
+                  wx:for-index="actIdx"
+                  class="activity-item">
+              <view class="activity-info">
+                <text class="activity-time">{{activity.time}}</text>
+                <view class="activity-detail">
+                  <text class="activity-title">{{activity.title}}</text>
+                  <text wx:if="{{activity.location}}" class="activity-location">📍 {{activity.location}}</text>
+                  <text wx:if="{{activity.price}}" class="activity-price">💰 {{activity.price}}元</text>
+                </view>
+              </view>
+              <view class="activity-actions">
+                <text class="delete-btn" catchtap="deleteActivityFromDay" 
+                      data-day-index="{{dayIdx}}" data-activity-index="{{actIdx}}">🗑️</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 空状态 -->
+          <view wx:else class="empty-activities">
+            <text class="empty-icon">📭</text>
+            <text class="empty-text">暂无活动，点击上方添加</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 初始化行程按钮（编辑模式且无行程时显示） -->
+    <view wx:if="{{isEdit && dailyItinerary.length === 0 && formData.startDate && formData.endDate}}" class="form-section">
+      <button class="init-itinerary-btn" bindtap="initDailyItinerary">
+        <text>📅 开始规划每日行程</text>
+      </button>
+    </view>
+
     <!-- 提交按钮 -->
     <view class="form-actions">
       <button 
@@ -236,6 +304,51 @@
       >
         <text>重置表单</text>
       </button>
+    </view>
+  </view>
+
+  <!-- 添加活动弹窗 -->
+  <view wx:if="{{showAddActivityModal}}" class="modal-overlay" catchtap="hideAddActivityModal">
+    <view class="modal-content" catchtap="">
+      <view class="modal-header">
+        <text class="modal-title">添加活动</text>
+        <text class="modal-close" bindtap="hideAddActivityModal">✕</text>
+      </view>
+      
+      <view class="modal-body">
+        <view class="modal-form-item">
+          <text class="modal-label">时间</text>
+          <picker mode="time" value="{{newActivity.time}}" bindchange="onActivityTimeChange">
+            <view class="modal-picker">{{newActivity.time}}</view>
+          </picker>
+        </view>
+        
+        <view class="modal-form-item">
+          <text class="modal-label">活动名称 *</text>
+          <input class="modal-input" value="{{newActivity.title}}" 
+                 data-field="title" bindinput="onNewActivityInput" 
+                 placeholder="例如：参观故宫博物院" />
+        </view>
+        
+        <view class="modal-form-item">
+          <text class="modal-label">地点</text>
+          <input class="modal-input" value="{{newActivity.location}}" 
+                 data-field="location" bindinput="onNewActivityInput" 
+                 placeholder="例如：北京市东城区" />
+        </view>
+        
+        <view class="modal-form-item">
+          <text class="modal-label">费用（元）</text>
+          <input class="modal-input" type="digit" value="{{newActivity.price}}" 
+                 data-field="price" bindinput="onNewActivityInput" 
+                 placeholder="例如：60" />
+        </view>
+      </view>
+      
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="hideAddActivityModal">取消</button>
+        <button class="modal-btn confirm" bindtap="addActivityToDay">添加</button>
+      </view>
     </view>
   </view>
 </view>
